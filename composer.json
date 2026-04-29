@@ -70,7 +70,7 @@
         "developer": "Anvildev",
         "developerUrl": "https://anvildev.xyz",
         "class": "anvildev\\trails\\Trails",
-        "documentationUrl": "https://anvildev.xyz/trails/docs",
+        "documentationUrl": "https://github.com/anvildevxyz/craft-trails/blob/main/README.md",
         "changelogUrl": "https://raw.githubusercontent.com/anvildev/craft-trails/main/CHANGELOG.md",
         "hasCpSection": true,
         "hasCpSettings": false
