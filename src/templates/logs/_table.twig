@@ -1,0 +1,30 @@
+<tbody id="trails-log-tbody">
+    {% for log in logs %}
+        <tr {% if sinceTimestamp is defined and sinceTimestamp and log.dateCreated > sinceTimestamp %}data-new{% endif %}>
+            <td>
+                <span title="{{ log.dateCreated|date('Y-m-d H:i:s') }}">
+                    {{ log.dateCreated|timestamp('short') }}
+                </span>
+            </td>
+            <td>
+                <span class="trails-badge trails-badge--{{ log.event starts with 'element.deleted' ? 'danger' : (log.event starts with 'element.created' or log.event starts with 'asset.uploaded' ? 'success' : (log.event starts with 'user.login' ? 'info' : 'default')) }}">
+                    {{ log.event }}
+                </span>
+            </td>
+            <td>{{ log.userName ?? '—' }}</td>
+            <td>
+                {% if log.elementTitle %}
+                    {{ log.elementTitle }}
+                {% elseif log.elementType and log.elementId %}
+                    {{ log.elementType|split('\\')|last }} #{{ log.elementId }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td><span class="trails-code">{{ log.ipAddress ?? '—' }}</span></td>
+            <td class="thin">
+                <a href="{{ cpUrl('trails/logs/' ~ log.id) }}" class="btn small">{{ 'View'|t('trails') }}</a>
+            </td>
+        </tr>
+    {% endfor %}
+</tbody>

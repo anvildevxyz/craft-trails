@@ -1,0 +1,59 @@
+<div class="trails-widget-stats">
+    <div class="trails-widget-stat">
+        <span class="trails-widget-stat-value">{{ summary.totalEvents }}</span>
+        <span class="trails-widget-stat-label">{{ 'Events'|t('trails') }}</span>
+    </div>
+    <div class="trails-widget-stat">
+        <span class="trails-widget-stat-value">{{ summary.logins }}</span>
+        <span class="trails-widget-stat-label">{{ 'Logins'|t('trails') }}</span>
+    </div>
+    <div class="trails-widget-stat">
+        <span class="trails-widget-stat-value">{{ summary.elementsCreated }}</span>
+        <span class="trails-widget-stat-label">{{ 'Created'|t('trails') }}</span>
+    </div>
+    <div class="trails-widget-stat">
+        <span class="trails-widget-stat-value">{{ summary.elementsDeleted }}</span>
+        <span class="trails-widget-stat-label">{{ 'Deleted'|t('trails') }}</span>
+    </div>
+</div>
+
+{% set maxVal = max(1, max(dailyActivity|values)) %}
+{% set points = [] %}
+{% set width = max(20, (dailyActivity|length - 1) * 20) %}
+{% set height = 60 %}
+{% for date, count in dailyActivity %}
+    {% set x = loop.index0 * 20 %}
+    {% set y = height - (count / maxVal * height) %}
+    {% set points = points|merge([x ~ ',' ~ y]) %}
+{% endfor %}
+
+<svg viewBox="0 0 {{ width }} {{ height }}" class="trails-sparkline" preserveAspectRatio="none">
+    <defs>
+        <linearGradient id="trails-spark-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+            <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.05" />
+        </linearGradient>
+    </defs>
+    <polygon points="{{ points|join(' ') }} {{ width }},{{ height }} 0,{{ height }}"
+              fill="url(#trails-spark-fill)" stroke="none"/>
+    <polyline points="{{ points|join(' ') }}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+<div style="text-align: center; margin-top: 8px;">
+    <a href="{{ cpUrl('trails/logs') }}" class="light" style="font-size: 13px;">{{ 'View all logs →'|t('trails') }}</a>
+</div>
+
+{% if recentLogs is defined and recentLogs|length %}
+    <div style="margin-top: 16px; border-top: 1px solid #f3f4f6; padding-top: 12px;">
+        <div style="font-size: 11px; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.5px; margin-bottom: 8px;">
+            {{ 'Recent Activity'|t('trails') }}
+        </div>
+        {% for log in recentLogs %}
+            <a href="{{ cpUrl('trails/logs/' ~ log.id) }}" style="display: flex; align-items: center; gap: 8px; padding: 4px 0; text-decoration: none; font-size: 12px; color: #374151;">
+                <span class="status {{ log.event starts with 'element.deleted' ? 'red' : (log.event starts with 'element.created' ? 'green' : (log.event starts with 'user.' ? 'blue' : 'grey')) }}"></span>
+                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ log.event }}</span>
+                <span style="color: #9ca3af; font-size: 11px;">{{ log.userName ?? 'System' }}</span>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}

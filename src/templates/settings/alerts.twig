@@ -1,0 +1,57 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set selectedSubnavItem = 'settings' %}
+{% set selectedSettingsSubnavItem = 'alerts' %}
+{% set title = "Alert Settings"|t('trails') %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include 'trails/settings/_sidebar' %}
+{% endblock %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="trails/cp/settings/save">
+        {{ redirectInput('trails/settings/alerts') }}
+
+        <h2 class="heading first">{{ 'Email Alerts'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure email notifications for suspicious activity.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Enable Alerts'|t('trails'),
+            id: 'alertsEnabled',
+            name: 'alertsEnabled',
+            on: settings.alertsEnabled,
+            instructions: 'Send email notifications for suspicious activity.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Alert Email'|t('trails'),
+            id: 'alertEmail',
+            name: 'alertEmail',
+            value: settings.alertEmail,
+            type: 'email',
+            instructions: 'Email address to receive security alerts.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Failed Login Threshold'|t('trails'),
+            id: 'failedLoginThreshold',
+            name: 'failedLoginThreshold',
+            value: settings.failedLoginThreshold,
+            type: 'number',
+            min: 1,
+            instructions: 'Send alert after this many failed logins from the same IP within 1 hour.'|t('trails')
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Save Settings'|t('trails') }}</button>
+        </div>
+    </form>
+{% endblock %}

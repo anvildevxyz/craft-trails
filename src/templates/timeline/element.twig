@@ -1,0 +1,70 @@
+{% extends '_layouts/cp' %}
+{% set title = (elementTitle ?? ('Element #' ~ elementId))|t('trails') %}
+{% set selectedSubnavItem = 'logs' %}
+{% set crumbs = [
+    { label: 'Trails'|t('trails'), url: cpUrl('trails') },
+    { label: 'Logs'|t('trails'), url: cpUrl('trails/logs') }
+] %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block content %}
+    <div class="trails-widget-card trails-mb-24">
+        <div class="trails-widget-header">
+            <h3 class="trails-widget-title">
+                {{ 'Timeline for {title}'|t('trails', {title: elementTitle ?? ('Element #' ~ elementId)}) }}
+            </h3>
+            <small class="trails-code">{{ elementType }}</small>
+        </div>
+    </div>
+
+    {% if logs|length %}
+        <div class="trails-timeline">
+            {% for log in logs %}
+                {% set dotClass = log.event starts with 'element.created' or log.event starts with 'asset.uploaded'
+                    ? 'trails-timeline-dot--created'
+                    : (log.event starts with 'element.deleted'
+                        ? 'trails-timeline-dot--deleted'
+                        : 'trails-timeline-dot--default') %}
+
+                <div class="trails-timeline-item">
+                    <div class="trails-timeline-dot {{ dotClass }}"></div>
+
+                    <div class="trails-timeline-body">
+                        <div class="trails-timeline-header">
+                            <span class="trails-badge">{{ log.event }}</span>
+                            <time class="trails-timeline-time">{{ log.dateCreated|date('Y-m-d H:i:s') }}</time>
+                            {% if log.userName %}
+                                <span class="trails-timeline-actor">{{ 'by'|t('trails') }} {{ log.userName }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% set metadata = log.decodedMetadata() %}
+                        {% if metadata %}
+                            <details class="trails-timeline-details">
+                                <summary>{{ 'Metadata'|t('trails') }}</summary>
+                                <pre class="trails-pre">{{ metadata|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                            </details>
+                        {% endif %}
+
+                        {% if log.requestUrl %}
+                            <div class="trails-timeline-meta">
+                                <span class="trails-code">{{ log.requestMethod ?? 'GET' }}</span>
+                                <span class="trails-code">{{ log.requestUrl }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="trails-widget-card">
+            <div class="trails-empty-state">
+                <p class="trails-empty-title">{{ 'No audit logs found for this element.'|t('trails') }}</p>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,25 @@
+parameters:
+    level: 5
+    paths:
+        - src
+    excludePaths:
+        - src/templates/*
+        - src/migrations/*
+        - src/translations/*
+    tmpDir: .phpstan
+    treatPhpDocTypesAsCertain: false
+    bootstrapFiles:
+        - ../../vendor/autoload.php
+        - ../../vendor/craftcms/cms/bootstrap/console.php
+    ignoreErrors:
+        # ActiveRecord find()->one() returns array|ActiveRecord
+        - '#Cannot access property \$\w+ on array\|yii\\db\\ActiveRecord#'
+        # Yii/Craft event dynamic properties (e.g., $event->userId on ModelEvent)
+        - '#Access to an undefined property .+Event::\$\w+#'
+
+    checkFunctionNameCase: true
+    reportMagicMethods: true
+    reportMagicProperties: true
+
+includes:
+    - ../../vendor/craftcms/phpstan/phpstan.neon

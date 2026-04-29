@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Integrity</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #1a1a2e;
+            background: #ffffff;
+            padding: 32px;
+            line-height: 1.5;
+        }
+
+        .certificate-header {
+            border-bottom: 3px solid #1a1a2e;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #1a1a2e;
+        }
+
+        h2 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+            margin-top: 24px;
+        }
+
+        .meta-grid {
+            display: table;
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .meta-row {
+            display: table-row;
+        }
+
+        .meta-label {
+            display: table-cell;
+            font-weight: bold;
+            color: #555;
+            width: 160px;
+            padding: 3px 8px 3px 0;
+        }
+
+        .meta-value {
+            display: table-cell;
+            color: #1a1a2e;
+            padding: 3px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            margin: 16px 0;
+        }
+
+        .badge-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .badge-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 11px;
+        }
+
+        th {
+            background: #f0f0f5;
+            color: #1a1a2e;
+            text-align: left;
+            padding: 7px 10px;
+            border: 1px solid #d0d0e0;
+            font-weight: 700;
+        }
+
+        td {
+            padding: 6px 10px;
+            border: 1px solid #d0d0e0;
+            color: #333;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background: #f8f8fc;
+        }
+
+        .status-pass {
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .status-fail {
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        .section {
+            margin-top: 28px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #d0d0e0;
+            padding-top: 16px;
+            color: #777;
+            font-size: 10px;
+        }
+
+        .monospace {
+            font-family: DejaVu Sans Mono, Courier New, monospace;
+            font-size: 10px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="certificate-header">
+        <h1>Certificate of Integrity</h1>
+        <div class="meta-grid">
+            <div class="meta-row">
+                <div class="meta-label">Site:</div>
+                <div class="meta-value">{{ siteName }}</div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-label">Date Range:</div>
+                <div class="meta-value">{{ dateFrom }} &mdash; {{ dateTo }}</div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-label">Generated At:</div>
+                <div class="meta-value">{{ generatedAt }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if report.isClean() %}
+        <div class="badge badge-pass">ALL CHECKS PASSED</div>
+    {% else %}
+        <div class="badge badge-fail">ISSUES FOUND</div>
+    {% endif %}
+
+    <div class="section">
+        <h2>Integrity Summary</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Check</th>
+                    <th>Result</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Record Hashes</td>
+                    <td>
+                        {% if report.invalidHashes == 0 %}
+                            <span class="status-pass">PASSED</span>
+                        {% else %}
+                            <span class="status-fail">FAILED</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ report.validHashes }} valid / {{ report.totalRecords }} total
+                        {% if report.recordsInRange is not null %}
+                            ({{ report.recordsInRange }} in date range)
+                        {% endif %}
+                        {% if report.invalidHashes > 0 %}
+                            &mdash; {{ report.invalidHashes }} invalid (IDs: {{ report.invalidHashIds|join(', ') }})
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Hash Chain</td>
+                    <td>
+                        {% if report.chainValid %}
+                            <span class="status-pass">UNBROKEN</span>
+                        {% else %}
+                            <span class="status-fail">BROKEN</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if report.chainValid %}
+                            Chain is intact
+                        {% else %}
+                            Break detected at chain position {{ report.chainBrokenAt ?? 'unknown' }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Merkle Trees</td>
+                    <td>
+                        {% if report.merkleRootsFailed == 0 %}
+                            <span class="status-pass">PASSED</span>
+                        {% else %}
+                            <span class="status-fail">FAILED</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ report.merkleRootsVerified }} verified
+                        {% if report.merkleRootsFailed > 0 %}
+                            &mdash; {{ report.merkleRootsFailed }} failed
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>External Anchors</td>
+                    <td>
+                        {% if report.anchorsFailed == 0 %}
+                            <span class="status-pass">PASSED</span>
+                        {% else %}
+                            <span class="status-fail">FAILED</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ report.anchorsVerified }} verified
+                        {% if report.anchorsFailed > 0 %}
+                            &mdash; {{ report.anchorsFailed }} failed
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% if roots|length > 0 %}
+        <div class="section">
+            <h2>Merkle Roots ({{ roots|length }})</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Positions</th>
+                        <th>Records</th>
+                        <th>Root Hash</th>
+                        <th>Date Computed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for root in roots %}
+                        <tr>
+                            <td>{{ root.id }}</td>
+                            <td>{{ root.batchStartPosition }}&ndash;{{ root.batchEndPosition }}</td>
+                            <td>{{ root.recordCount }}</td>
+                            <td class="monospace">{{ root.rootHash|slice(0, 16) }}&hellip;</td>
+                            <td>{{ root.dateComputed }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if anchors|length > 0 %}
+        <div class="section">
+            <h2>External Anchors ({{ anchors|length }})</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th>Verified</th>
+                        <th>Date Anchored</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for anchor in anchors %}
+                        <tr>
+                            <td>{{ anchor.id }}</td>
+                            <td>{{ anchor.anchorType }}</td>
+                            <td class="monospace">{{ anchor.anchorRef|slice(0, 40) }}{% if anchor.anchorRef|length > 40 %}&hellip;{% endif %}</td>
+                            <td>
+                                {% if anchor.verified %}
+                                    <span class="status-pass">Yes</span>
+                                {% else %}
+                                    <span class="status-fail">No</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ anchor.dateAnchored }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    <div class="footer">
+        <p><strong>Verification Instructions:</strong> To independently verify this certificate, use the Trails CLI command
+        <span class="monospace">php craft trails/integrity/verify</span> against the same database.
+        Cross-reference Merkle root hashes and anchor references with external storage (S3 / RFC 3161 timestamp authority)
+        to confirm that no audit records have been added, removed, or modified since this certificate was generated.</p>
+        <p style="margin-top: 8px;">Generated by Trails Audit Plugin &mdash; {{ siteName }} &mdash; {{ generatedAt }}</p>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,220 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set selectedSubnavItem = 'settings' %}
+{% set selectedSettingsSubnavItem = 'general' %}
+{% set title = "General Settings"|t('trails') %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include 'trails/settings/_sidebar' %}
+{% endblock %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="trails/cp/settings/save">
+        {{ redirectInput('trails/settings/general') }}
+
+        <h2 class="heading first">{{ 'General Settings'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure basic audit trail settings.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Enable Logging'|t('trails'),
+            id: 'enabled',
+            name: 'enabled',
+            on: settings.enabled,
+            instructions: 'When disabled, no new audit events will be recorded.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Retention Period (Days)'|t('trails'),
+            id: 'retentionDays',
+            name: 'retentionDays',
+            value: settings.retentionDays,
+            type: 'number',
+            min: 0,
+            instructions: 'How long to keep logs. Set to 0 to keep forever.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Run cleanup automatically on a daily schedule'|t('trails'),
+            id: 'scheduledRetention',
+            name: 'scheduledRetention',
+            on: settings.scheduledRetention,
+            instructions: 'GC-based cleanup runs automatically regardless. This option adds a predictable daily schedule via the queue.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Rate Limit'|t('trails'),
+            id: 'logRateLimit',
+            name: 'logRateLimit',
+            value: settings.logRateLimit,
+            type: 'number',
+            min: 0,
+            instructions: 'Maximum number of log events per minute. Set to 0 for no limit.'|t('trails')
+        }) }}
+
+        {% if retentionStats is defined %}
+            <div class="trails-storage-info">
+                <strong>{{ 'Current Storage'|t('trails') }}:</strong>
+                {{ retentionStats.totalLogs|number_format }} {{ 'logs'|t('trails') }}
+                {% if retentionStats.oldestLogDate %}
+                    ({{ 'from'|t('trails') }} {{ retentionStats.oldestLogDate|date('Y-m-d') }})
+                {% endif %}
+                {% if retentionStats.logsToDelete > 0 %}
+                    <br><span class="trails-storage-warning">{{ '{count} logs scheduled for cleanup'|t('trails', {count: retentionStats.logsToDelete}) }}</span>
+                {% endif %}
+            </div>
+            {% if retentionStats.retentionDays == 0 %}
+                <div class="readable" style="margin-top: 8px;">
+                    <blockquote class="note warning">
+                        <p>{{ 'Retention is set to keep logs forever. Without a scheduled cleanup job, the database will grow indefinitely. Consider setting a retention period or scheduling `php craft trails/retention/cleanup` via cron.'|t('trails') }}</p>
+                    </blockquote>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <hr>
+
+        <h2>{{ 'What to Log'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure which events should be tracked.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Element Changes'|t('trails'),
+            id: 'logElements',
+            name: 'logElements',
+            on: settings.logElements,
+            instructions: 'Log when entries, assets, users, and other elements are created, updated, or deleted.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'User Authentication'|t('trails'),
+            id: 'logAuthentication',
+            name: 'logAuthentication',
+            on: settings.logAuthentication,
+            instructions: 'Log user logins and logouts.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Failed Login Attempts'|t('trails'),
+            id: 'logFailedLogins',
+            name: 'logFailedLogins',
+            on: settings.logFailedLogins,
+            instructions: 'Log failed authentication attempts for security monitoring.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Permission Changes'|t('trails'),
+            id: 'logPermissionChanges',
+            name: 'logPermissionChanges',
+            on: settings.logPermissionChanges,
+            instructions: 'Log when user permissions or group assignments change.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Config Changes'|t('trails'),
+            id: 'logConfigChanges',
+            name: 'logConfigChanges',
+            on: settings.logConfigChanges,
+            instructions: 'Log when project config changes are applied.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Asset Operations'|t('trails'),
+            id: 'logAssets',
+            name: 'logAssets',
+            on: settings.logAssets,
+            instructions: 'Log asset uploads, replacements, and modifications.'|t('trails')
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'Exclusions'|t('trails') }}</h2>
+        <p class="light">{{ 'Specify element types and sections to exclude from logging.'|t('trails') }}</p>
+
+        {{ forms.checkboxSelectField({
+            label: 'Excluded Element Types'|t('trails'),
+            id: 'excludedElementTypes',
+            name: 'excludedElementTypes',
+            values: settings.excludedElementTypes,
+            options: [
+                {label: 'Entries', value: 'craft\\elements\\Entry'},
+                {label: 'Assets', value: 'craft\\elements\\Asset'},
+                {label: 'Users', value: 'craft\\elements\\User'},
+                {label: 'Categories', value: 'craft\\elements\\Category'},
+                {label: 'Tags', value: 'craft\\elements\\Tag'},
+                {label: 'Global Sets', value: 'craft\\elements\\GlobalSet'},
+                {label: 'Matrix Blocks', value: 'craft\\elements\\MatrixBlock'},
+            ],
+            instructions: 'Select element types to exclude from audit logging.'|t('trails')
+        }) }}
+
+        {% set sectionOptions = [] %}
+        {% for section in craft.app.entries.allSections %}
+            {% set sectionOptions = sectionOptions|merge([{label: section.name, value: section.handle}]) %}
+        {% endfor %}
+
+        {% if sectionOptions|length %}
+            {{ forms.checkboxSelectField({
+                label: 'Excluded Sections'|t('trails'),
+                id: 'excludedSections',
+                name: 'excludedSections',
+                values: settings.excludedSections,
+                options: sectionOptions,
+                instructions: 'Select sections to exclude from audit logging (only applies to Entry elements).'|t('trails')
+            }) }}
+        {% endif %}
+
+        <hr>
+
+        <h2>{{ 'Data Capture'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure what additional data to capture with each audit event.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Capture IP Addresses'|t('trails'),
+            id: 'captureIpAddress',
+            name: 'captureIpAddress',
+            on: settings.captureIpAddress,
+            instructions: 'Store the IP address of each action.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Capture User Agent'|t('trails'),
+            id: 'captureUserAgent',
+            name: 'captureUserAgent',
+            on: settings.captureUserAgent,
+            instructions: 'Store the browser/device information.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Capture Field Changes'|t('trails'),
+            id: 'captureFieldChanges',
+            name: 'captureFieldChanges',
+            on: settings.captureFieldChanges,
+            instructions: 'Store before/after values of field changes. Warning: increases storage usage.'|t('trails'),
+            warning: settings.captureFieldChanges ? 'This can significantly increase database size.'|t('trails') : null
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'Maintenance'|t('trails') }}</h2>
+        <p class="light">{{ 'Run retention cleanup manually to remove old logs based on your retention policy.'|t('trails') }}</p>
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Save Settings'|t('trails') }}</button>
+        </div>
+    </form>
+
+    <form method="post" action="{{ actionUrl('trails/cp/settings/cleanup') }}" style="margin-top: 1rem;">
+        {{ csrfInput() }}
+        <button type="submit" class="btn" onclick="return confirm('{{ 'Are you sure you want to delete old logs?'|t('trails') }}')">
+            {{ 'Run Cleanup Now'|t('trails') }}
+        </button>
+        <span class="light" style="margin-left: 1rem;">{{ 'CLI: php craft trails/retention/cleanup'|t('trails') }}</span>
+    </form>
+{% endblock %}

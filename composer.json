@@ -1,0 +1,86 @@
+{
+    "name": "anvildev/craft-trails",
+    "description": "Enterprise-grade audit trail and compliance logging for Craft CMS",
+    "version": "1.0.0",
+    "type": "craft-plugin",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "audit",
+        "logging",
+        "compliance",
+        "gdpr",
+        "hipaa",
+        "activity",
+        "tracking",
+        "security"
+    ],
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "anvildev",
+            "homepage": "https://anvildev.xyz"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "craftcms/cms": "^5.0",
+        "aws/aws-sdk-php": "^3.300"
+    },
+    "require-dev": {
+        "craftcms/phpstan": "dev-main",
+        "phpstan/phpstan": "^1.10.0",
+        "craftcms/ecs": "dev-main",
+        "craftcms/rector": "dev-main",
+        "phpunit/phpunit": "^9.5",
+        "mockery/mockery": "^1.5",
+        "codeception/codeception": "^5.2",
+        "codeception/module-asserts": "^3.0",
+        "codeception/module-yii2": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "anvildev\\trails\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "anvildev\\trails\\tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "ecs": "ecs check --fix",
+        "ecs:check": "ecs check",
+        "rector": "rector process --dry-run",
+        "rector:fix": "rector process",
+        "test": "phpunit",
+        "test:integration": "codecept run integration --no-redirect",
+        "test:all": ["@test", "@test:integration"],
+        "test:coverage": "phpunit --coverage-html coverage",
+        "check": [
+            "@ecs:check",
+            "@phpstan"
+        ]
+    },
+    "extra": {
+        "handle": "trails",
+        "name": "Trails",
+        "developer": "Anvildev",
+        "developerUrl": "https://anvildev.xyz",
+        "class": "anvildev\\trails\\Trails",
+        "documentationUrl": "https://anvildev.xyz/trails/docs",
+        "changelogUrl": "https://raw.githubusercontent.com/anvildev/craft-trails/main/CHANGELOG.md",
+        "hasCpSection": true,
+        "hasCpSettings": false
+    },
+    "config": {
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

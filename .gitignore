@@ -1,0 +1,15 @@
+.phpunit.result.cache
+.DS_Store
+vendor/
+
+# PHPStan cache
+.phpstan/
+
+# Coverage
+coverage/
+
+# Codeception
+tests/_output/*
+!tests/_output/.gitkeep
+tests/_support/_generated/
+tests/_craft/storage/

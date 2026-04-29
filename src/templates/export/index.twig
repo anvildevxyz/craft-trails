@@ -1,0 +1,205 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = 'Export Logs'|t('trails') %}
+{% set selectedSubnavItem = 'export' %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block content %}
+    <div class="trails-widget-card trails-mb-24">
+        <div class="trails-widget-header">
+            <h3 class="trails-widget-title">{{ 'Export Audit Logs'|t('trails') }}</h3>
+        </div>
+        <p class="light">{{ 'Export your audit logs for compliance reporting, backup, or analysis.'|t('trails') }}</p>
+
+        <form method="post" action="{{ actionUrl('trails/cp/export/download') }}">
+            {{ csrfInput() }}
+            {{ redirectInput('trails/export') }}
+
+            <div class="trails-export-grid">
+                <div>
+                    {{ forms.dateField({
+                        label: 'From Date'|t('trails'),
+                        id: 'dateFrom',
+                        name: 'dateFrom',
+                        instructions: 'Leave empty to include all history'|t('trails')
+                    }) }}
+                </div>
+                <div>
+                    {{ forms.dateField({
+                        label: 'To Date'|t('trails'),
+                        id: 'dateTo',
+                        name: 'dateTo',
+                        instructions: 'Leave empty to include up to now'|t('trails')
+                    }) }}
+                </div>
+            </div>
+
+            <hr class="trails-divider">
+
+            <div class="trails-export-grid-3">
+                <div>
+                    {{ forms.selectField({
+                        label: 'Event Type'|t('trails'),
+                        id: 'event',
+                        name: 'event',
+                        options: [{label: 'All Events'|t('trails'), value: ''}]|merge(eventTypes|map(e => {label: e, value: e}))
+                    }) }}
+                </div>
+                <div>
+                    {{ forms.selectField({
+                        label: 'Category'|t('trails'),
+                        id: 'category',
+                        name: 'category',
+                        options: [{label: 'All Categories'|t('trails'), value: ''}]|merge(categories|map(c => {label: c, value: c}))
+                    }) }}
+                </div>
+                <div>
+                    {{ forms.selectField({
+                        label: 'User'|t('trails'),
+                        id: 'userId',
+                        name: 'userId',
+                        options: [{label: 'All Users'|t('trails'), value: ''}]|merge(users|map(u => {label: u.username, value: u.id}))
+                    }) }}
+                </div>
+            </div>
+
+            <hr class="trails-divider">
+
+            {{ forms.selectField({
+                label: 'Export Format'|t('trails'),
+                id: 'format',
+                name: 'format',
+                instructions: 'Choose the format for your export file'|t('trails'),
+                options: [
+                    {label: 'CSV (Spreadsheet)', value: 'csv'},
+                    {label: 'JSON (Machine-readable)', value: 'json'},
+                    {label: 'HTML Report (Printable)', value: 'html'}
+                ]
+            }) }}
+
+            {% set currentUser = currentUser ?? craft.app.user.identity %}
+            {% set canViewPii = currentUser and (currentUser.admin or currentUser.can('trails-manageSettings')) %}
+            {% if canViewPii %}
+                {{ forms.lightswitchField({
+                    label: 'Redact PII'|t('trails'),
+                    id: 'redactPii',
+                    name: 'redactPii',
+                    instructions: 'Replaces userEmail, ipAddress, and userAgent with placeholder values. Users without the "Manage settings" permission always get redacted exports.'|t('trails'),
+                    on: false,
+                }) }}
+            {% else %}
+                {# Non-privileged users see the flag forced on, for transparency. #}
+                <input type="hidden" name="redactPii" value="1">
+                <p class="light" style="margin-top: 12px;">
+                    {{ 'PII (email, IP, user agent) will be redacted in your export.'|t('trails') }}
+                </p>
+            {% endif %}
+
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn submit">{{ 'Download Export'|t('trails') }}</button>
+            </div>
+        </form>
+    </div>
+
+    {% if recentExports|length > 0 %}
+        <div class="trails-widget-card trails-mb-24">
+            <div class="trails-widget-header">
+                <h3 class="trails-widget-title">{{ 'Recent Exports'|t('trails') }}</h3>
+            </div>
+            <p class="light">{{ 'Background exports (triggered for queries returning more than `inlineExportLimit` records) appear here. Files are pruned after the expiry date.'|t('trails') }}</p>
+            <table class="data fullwidth" style="margin-top: 12px;">
+                <thead>
+                    <tr>
+                        <th>{{ 'Format'|t('trails') }}</th>
+                        <th>{{ 'Status'|t('trails') }}</th>
+                        <th>{{ 'Progress'|t('trails') }}</th>
+                        <th>{{ 'Records'|t('trails') }}</th>
+                        <th>{{ 'Created'|t('trails') }}</th>
+                        <th>{{ 'Expires'|t('trails') }}</th>
+                        <th>{{ 'Action'|t('trails') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for export in recentExports %}
+                        {% set statusClass = {
+                            'pending': 'orange',
+                            'processing': 'blue',
+                            'complete': 'green',
+                            'failed': 'red'
+                        }[export.status] ?? 'grey' %}
+                        <tr data-id="{{ export.id }}" data-status="{{ export.status }}">
+                            <td><code>{{ export.format|upper }}</code></td>
+                            <td>
+                                <span class="status {{ statusClass }}"></span>
+                                {{ export.status|t('trails') }}
+                            </td>
+                            <td>{{ export.progress }}%</td>
+                            <td>{{ export.totalRecords ?? '—' }}</td>
+                            <td>{{ export.dateCreated|datetime('short') }}</td>
+                            <td>{{ export.dateExpires|datetime('short') }}</td>
+                            <td>
+                                {% if export.status == 'complete' %}
+                                    <a href="{{ url('trails/export/file', {id: export.id}) }}" class="btn small">{{ 'Download'|t('trails') }}</a>
+                                {% elseif export.status == 'failed' %}
+                                    <span class="error">{{ 'Failed — see logs'|t('trails') }}</span>
+                                {% else %}
+                                    <span class="light">{{ 'in progress'|t('trails') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% set hasInProgress = recentExports|filter(e => e.status in ['pending', 'processing'])|length > 0 %}
+            {% if hasInProgress %}
+                <p class="light" id="trails-exports-poll-msg" style="margin-top: 12px;">{{ 'Auto-refreshing every 3s while exports are in progress…'|t('trails') }}</p>
+                {# Poll the actionStatus endpoint for in-progress rows; reload page when any
+                   status changes from pending/processing to complete/failed. Stops polling
+                   automatically once nothing is in flight. #}
+                {% set statusUrl = cpUrl('trails/export/status') %}
+                <script>
+                    (function () {
+                        var inFlight = ['pending', 'processing'];
+                        var poll = function () {
+                            var rows = document.querySelectorAll('tr[data-id][data-status]');
+                            var pending = Array.prototype.filter.call(rows, function (r) {
+                                return inFlight.indexOf(r.dataset.status) !== -1;
+                            });
+                            if (pending.length === 0) {
+                                return; // nothing to do
+                            }
+                            Promise.all(pending.map(function (row) {
+                                var base = {{ statusUrl|json_encode|raw }};
+                                var url = base + (base.indexOf('?') === -1 ? '?' : '&') + 'id=' + encodeURIComponent(row.dataset.id);
+                                return fetch(url, {
+                                    headers: { 'Accept': 'application/json' },
+                                    credentials: 'same-origin',
+                                })
+                                    .then(function (res) { return res.ok ? res.json() : null; })
+                                    .then(function (data) {
+                                        return data && data.status && data.status !== row.dataset.status
+                                            ? data.status
+                                            : null;
+                                    })
+                                    .catch(function () { return null; });
+                            })).then(function (results) {
+                                if (results.some(function (s) { return s !== null; })) {
+                                    window.location.reload();
+                                } else {
+                                    setTimeout(poll, 3000);
+                                }
+                            });
+                        };
+                        setTimeout(poll, 3000);
+                    })();
+                </script>
+            {% endif %}
+        </div>
+    {% endif %}
+
+{% endblock %}

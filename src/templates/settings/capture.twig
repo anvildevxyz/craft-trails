@@ -1,0 +1,83 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set selectedSubnavItem = 'settings' %}
+{% set selectedSettingsSubnavItem = 'capture' %}
+{% set title = "Data Capture Settings"|t('trails') %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include 'trails/settings/_sidebar' %}
+{% endblock %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="trails/cp/settings/save">
+        {{ redirectInput('trails/settings/capture') }}
+
+        <h2 class="heading first">{{ 'Data Capture'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure what additional data to capture with each audit event.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Capture IP Addresses'|t('trails'),
+            id: 'captureIpAddress',
+            name: 'captureIpAddress',
+            on: settings.captureIpAddress,
+            instructions: 'Store the IP address of each action.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Anonymize IPs (GDPR)'|t('trails'),
+            id: 'anonymizeIp',
+            name: 'anonymizeIp',
+            on: settings.anonymizeIp,
+            instructions: 'Replace the last octet of IP addresses with 0 for privacy compliance.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Capture User Agent'|t('trails'),
+            id: 'captureUserAgent',
+            name: 'captureUserAgent',
+            on: settings.captureUserAgent,
+            instructions: 'Store the browser/device information.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Capture Field Changes'|t('trails'),
+            id: 'captureFieldChanges',
+            name: 'captureFieldChanges',
+            on: settings.captureFieldChanges,
+            instructions: 'Store before/after values of field changes. Warning: increases storage usage.'|t('trails'),
+            warning: settings.captureFieldChanges ? 'This can significantly increase database size.'|t('trails') : null
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'IP Geolocation'|t('trails') }}</h2>
+
+        {{ forms.lightswitchField({
+            label: 'Enable geolocation'|t('trails'),
+            instructions: 'Resolve IP addresses to country/region/city via an external API. Adds a small delay per log write.'|t('trails'),
+            id: 'enableGeoIp',
+            name: 'enableGeoIp',
+            on: settings.enableGeoIp,
+        }) }}
+
+        {{ forms.textField({
+            label: 'Geolocation endpoint'|t('trails'),
+            instructions: 'URL template. Default: http://ip-api.com/json/ (free, rate-limited).'|t('trails'),
+            id: 'geoIpEndpoint',
+            name: 'geoIpEndpoint',
+            value: settings.geoIpEndpoint,
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Save Settings'|t('trails') }}</button>
+        </div>
+    </form>
+{% endblock %}

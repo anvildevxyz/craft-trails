@@ -1,0 +1,13 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.selectField({
+    label: 'Lookback Period'|t('trails'),
+    id: 'days',
+    name: 'days',
+    value: widget.days,
+    options: [
+        { label: '7 days'|t('trails'), value: 7 },
+        { label: '14 days'|t('trails'), value: 14 },
+        { label: '30 days'|t('trails'), value: 30 },
+    ],
+}) }}

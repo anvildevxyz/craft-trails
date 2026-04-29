@@ -1,0 +1,213 @@
+{% extends '_layouts/cp' %}
+{% set title = 'Log Details'|t('trails') %}
+{% set selectedSubnavItem = 'logs' %}
+{% set crumbs = [
+    { label: 'Trails'|t('trails'), url: cpUrl('trails') },
+    { label: 'Logs'|t('trails'), url: cpUrl('trails/logs') }
+] %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block content %}
+    <div class="trails-widget-card trails-mb-24">
+        <div class="trails-widget-header">
+            <h3 class="trails-widget-title">{{ log.event }}</h3>
+            <span class="status {{ log.event starts with 'element.deleted' ? 'red' : (log.event starts with 'element.created' ? 'green' : 'blue') }}"></span>
+        </div>
+        <table class="data fullwidth">
+            <tbody>
+                <tr>
+                    <th style="width: 200px;">{{ 'ID'|t('trails') }}</th>
+                    <td>{{ log.id }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Timestamp'|t('trails') }}</th>
+                    <td>{{ log.dateCreated|date('Y-m-d H:i:s') }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Event'|t('trails') }}</th>
+                    <td>{{ log.event }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Category'|t('trails') }}</th>
+                    <td>{{ log.category ?? '—' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="trails-widget-card trails-mb-24">
+        <h3 class="trails-widget-title" style="margin-bottom: 12px;">{{ 'User Information'|t('trails') }}</h3>
+        <table class="data fullwidth">
+            <tbody>
+                <tr>
+                    <th style="width: 200px;">{{ 'User ID'|t('trails') }}</th>
+                    <td>{{ log.userId ?? '—' }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Username'|t('trails') }}</th>
+                    <td>{{ log.userName ?? '—' }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Email'|t('trails') }}</th>
+                    <td>{{ canViewPii ? (decryptedEmail ?? '—') : '(restricted)' }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'IP Address'|t('trails') }}</th>
+                    <td><code class="trails-code">{{ canViewPii ? (log.ipAddress ?? '—') : '(restricted)' }}</code></td>
+                </tr>
+                {% if log.country or log.city %}
+                    <tr>
+                        <th>{{ 'Location'|t('trails') }}</th>
+                        <td>
+                            {{ log.city }}{% if log.city and log.region %}, {% endif %}{{ log.region }}{% if log.region and log.country %}, {% endif %}{{ log.country }}
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if currentUser.admin %}
+                    <tr>
+                        <th>{{ 'Session ID'|t('trails') }}</th>
+                        <td><code class="trails-code">{{ log.sessionId ?? '—' }}</code></td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="trails-widget-card trails-mb-24">
+        <h3 class="trails-widget-title" style="margin-bottom: 12px;">{{ 'Element Information'|t('trails') }}</h3>
+        <table class="data fullwidth">
+            <tbody>
+                <tr>
+                    <th style="width: 200px;">{{ 'Element Type'|t('trails') }}</th>
+                    <td><code class="trails-code">{{ log.elementType ?? '—' }}</code></td>
+                </tr>
+                <tr>
+                    <th>{{ 'Element ID'|t('trails') }}</th>
+                    <td>{{ log.elementId ?? '—' }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Element Title'|t('trails') }}</th>
+                    <td>
+                        {% if elementUrl %}
+                            <a href="{{ elementUrl }}">{{ log.elementTitle ?? log.elementId }}</a>
+                        {% else %}
+                            {{ log.elementTitle ?? '—' }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>{{ 'Site ID'|t('trails') }}</th>
+                    <td>{{ log.siteId ?? '—' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="trails-widget-card trails-mb-24">
+        <h3 class="trails-widget-title" style="margin-bottom: 12px;">{{ 'Request Information'|t('trails') }}</h3>
+        <table class="data fullwidth">
+            <tbody>
+                <tr>
+                    <th style="width: 200px;">{{ 'Request Method'|t('trails') }}</th>
+                    <td>{{ log.requestMethod ?? '—' }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Request URL'|t('trails') }}</th>
+                    <td><code class="trails-code trails-code--block">{{ log.requestUrl ?? '—' }}</code></td>
+                </tr>
+                <tr>
+                    <th>{{ 'User Agent'|t('trails') }}</th>
+                    <td><small>{{ canViewPii ? (log.userAgent ?? '—') : '(restricted)' }}</small></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% if log.metadata %}
+        <div class="trails-widget-card trails-mb-24">
+            <h3 class="trails-widget-title" style="margin-bottom: 12px;">{{ 'Metadata'|t('trails') }}</h3>
+            <pre class="trails-pre">{{ metadata|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+        </div>
+    {% endif %}
+
+    {% if canViewPii %}
+        {% if diff is not null and diff|length > 0 %}
+            <div class="trails-widget-card trails-mb-24">
+                <h3 class="trails-widget-title" style="margin-bottom: 12px;">{{ 'Changes'|t('trails') }}</h3>
+                {% include 'trails/_includes/diff' with {diff: diff} only %}
+            </div>
+        {% elseif oldValue or newValue %}
+            <div class="trails-widget-card trails-mb-24">
+                <h3 class="trails-widget-title" style="margin-bottom: 12px;">{{ 'Changes'|t('trails') }}</h3>
+                <div class="trails-changes">
+                    {% if oldValue %}
+                        <div>
+                            <h4>{{ 'Previous Value'|t('trails') }}</h4>
+                            <pre class="trails-pre trails-pre--old">{{ oldValue|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                        </div>
+                    {% endif %}
+                    {% if newValue %}
+                        <div>
+                            <h4>{{ 'New Value'|t('trails') }}</h4>
+                            <pre class="trails-pre trails-pre--new">{{ newValue|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {% if currentUser.admin %}
+        <div class="trails-widget-card">
+            <h3 class="trails-widget-title" style="margin-bottom: 12px;">{{ 'Integrity'|t('trails') }}</h3>
+            <table class="data fullwidth">
+                <tbody>
+                    <tr>
+                        <th style="width: 200px;">{{ 'Hash'|t('trails') }}</th>
+                        <td><code class="trails-code">{{ log.hash ?? '—' }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>{{ 'Verification'|t('trails') }}</th>
+                        <td>
+                            {% if hashValid is defined %}
+                                {% if hashValid %}
+                                    <span class="status green"></span> {{ 'Verified — record integrity intact'|t('trails') }}
+                                {% else %}
+                                    <span class="status red"></span> {{ 'WARNING — record may have been tampered with'|t('trails') }}
+                                {% endif %}
+                            {% else %}
+                                <span class="status grey"></span> {{ 'Not verified'|t('trails') }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if log.chainPosition %}
+                        <tr>
+                            <th>{{ 'Chain Position'|t('trails') }}</th>
+                            <td>
+                                <span class="trails-chain-position">#{{ log.chainPosition }}</span>
+                                <div class="trails-chain-nav">
+                                    {% if prevLog %}
+                                        <a href="{{ cpUrl('trails/logs/' ~ prevLog.id) }}" class="btn small">{{ '← Previous'|t('trails') }}</a>
+                                    {% endif %}
+                                    {% if nextLog %}
+                                        <a href="{{ cpUrl('trails/logs/' ~ nextLog.id) }}" class="btn small">{{ 'Next →'|t('trails') }}</a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                    {% if log.prevHash %}
+                        <tr>
+                            <th>{{ 'Previous Hash'|t('trails') }}</th>
+                            <td><code class="trails-code">{{ log.prevHash }}</code></td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}

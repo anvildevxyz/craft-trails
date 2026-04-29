@@ -1,0 +1,232 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set selectedSubnavItem = 'settings' %}
+{% set selectedSettingsSubnavItem = 'security' %}
+{% set title = "Security & Compliance"|t('trails') %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include 'trails/settings/_sidebar' %}
+{% endblock %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="trails/cp/settings/save">
+        {{ redirectInput('trails/settings/security') }}
+
+        <h2 class="heading first">{{ 'GDPR & Privacy'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure privacy and data protection options.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Anonymize IPs (GDPR)'|t('trails'),
+            id: 'anonymizeIp',
+            name: 'anonymizeIp',
+            on: settings.anonymizeIp,
+            instructions: 'Replace the last octet of IP addresses with 0 for privacy compliance.'|t('trails')
+        }) }}
+
+        {{ forms.editableTableField({
+            label: 'Excluded Field Handles'|t('trails'),
+            id: 'excludedFieldHandles',
+            name: 'excludedFieldHandles',
+            instructions: 'Field handles whose values will never be captured in change snapshots (e.g. password, apiKey).'|t('trails'),
+            cols: {
+                handle: { heading: 'Field Handle'|t('trails'), type: 'singleline' }
+            },
+            rows: settings.excludedFieldHandles|map(h => {handle: h}),
+            addRowLabel: 'Add a field handle'|t('trails'),
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'Integrity'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure Merkle tree verification and external anchoring.'|t('trails') }}</p>
+
+        {{ forms.textField({
+            label: 'Merkle Batch Size'|t('trails'),
+            id: 'merkleBatchSize',
+            name: 'merkleBatchSize',
+            value: settings.merkleBatchSize,
+            type: 'number',
+            min: 16,
+            max: 4096,
+            instructions: 'Number of log entries per Merkle tree batch. Must be between 16 and 4096.'|t('trails')
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Anchor Type'|t('trails'),
+            id: 'anchorType',
+            name: 'anchorType',
+            value: settings.anchorType,
+            options: [
+                {label: 'None'|t('trails'), value: ''},
+                {label: 'AWS S3', value: 's3'},
+                {label: 'RFC 3161 Timestamp Authority', value: 'rfc3161'},
+            ],
+            instructions: 'Store Merkle root hashes in an external system for tamper-evident anchoring.'|t('trails')
+        }) }}
+
+        <div id="anchor-s3-fields" {% if settings.anchorType != 's3' %}style="display:none"{% endif %}>
+            {{ forms.textField({
+                label: 'S3 Bucket'|t('trails'),
+                id: 's3Bucket',
+                name: 's3Bucket',
+                value: settings.s3Bucket,
+                instructions: 'The S3 bucket name to store anchor files in.'|t('trails')
+            }) }}
+
+            {{ forms.textField({
+                label: 'S3 Region'|t('trails'),
+                id: 's3Region',
+                name: 's3Region',
+                value: settings.s3Region,
+                instructions: 'AWS region for the S3 bucket (e.g. us-east-1).'|t('trails')
+            }) }}
+
+            {{ forms.autosuggestField({
+                label: 'AWS Access Key ID'|t('trails'),
+                id: 's3AccessKeyId',
+                name: 's3AccessKeyId',
+                value: settings.s3AccessKeyId,
+                suggestEnvVars: true,
+                instructions: 'AWS access key ID. Supports $ENV_VAR syntax.'|t('trails')
+            }) }}
+
+            {{ forms.autosuggestField({
+                label: 'AWS Secret Access Key'|t('trails'),
+                id: 's3SecretAccessKey',
+                name: 's3SecretAccessKey',
+                value: settings.s3SecretAccessKey,
+                suggestEnvVars: true,
+                instructions: 'AWS secret access key. Supports $ENV_VAR syntax.'|t('trails')
+            }) }}
+
+            {{ forms.autosuggestField({
+                label: 'S3 Endpoint URL (optional)'|t('trails'),
+                id: 's3Endpoint',
+                name: 's3Endpoint',
+                value: settings.s3Endpoint,
+                suggestEnvVars: true,
+                placeholder: 'http://minio:10101',
+                instructions: 'Custom S3 endpoint for MinIO, LocalStack, or other S3-compatible servers. Leave empty to target real AWS S3. Supports $ENV_VAR syntax.'|t('trails')
+            }) }}
+
+            {{ forms.lightswitchField({
+                label: 'Use path-style addressing'|t('trails'),
+                id: 's3UsePathStyle',
+                name: 's3UsePathStyle',
+                on: settings.s3UsePathStyle,
+                instructions: 'Required for MinIO and most S3-compatible servers. AWS S3 supports both styles; leave off unless your endpoint specifically requires it.'|t('trails')
+            }) }}
+        </div>
+
+        <div id="anchor-rfc3161-fields" {% if settings.anchorType != 'rfc3161' %}style="display:none"{% endif %}>
+            {{ forms.textField({
+                label: 'TSA URL'|t('trails'),
+                id: 'tsaUrl',
+                name: 'tsaUrl',
+                value: settings.tsaUrl,
+                instructions: 'RFC 3161 Timestamp Authority endpoint URL (must be HTTPS).'|t('trails')
+            }) }}
+
+            {{ forms.textField({
+                label: 'TSA Trusted CA Bundle (path)'|t('trails'),
+                id: 'tsaTrustedCaBundle',
+                name: 'tsaTrustedCaBundle',
+                value: settings.tsaTrustedCaBundle,
+                placeholder: '/path/to/cacert.pem',
+                instructions: 'Filesystem path to a PEM bundle containing the TSA\'s trust root(s). Required for verification — without it, every RFC 3161 anchor is reported unverified. Falls back to the inline PEM below if empty.'|t('trails')
+            }) }}
+
+            {{ forms.textareaField({
+                label: 'TSA CA Bundle (inline PEM)'|t('trails'),
+                id: 'tsaCaBundlePem',
+                name: 'tsaCaBundlePem',
+                value: settings.tsaCaBundlePem,
+                rows: 8,
+                placeholder: '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----',
+                instructions: 'Alternative to the path above: paste the trust-root PEM directly. Used when the path field is empty.'|t('trails')
+            }) }}
+        </div>
+
+        <hr>
+
+        <h2>{{ 'Alerts'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure email notifications for suspicious activity.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Enable Alerts'|t('trails'),
+            id: 'alertsEnabled',
+            name: 'alertsEnabled',
+            on: settings.alertsEnabled,
+            instructions: 'Send email notifications for suspicious activity.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Alert Email'|t('trails'),
+            id: 'alertEmail',
+            name: 'alertEmail',
+            value: settings.alertEmail,
+            type: 'email',
+            instructions: 'Email address to receive security alerts.'|t('trails')
+        }) }}
+
+        {{ forms.checkboxSelectField({
+            label: 'Alert Events'|t('trails'),
+            id: 'alertEvents',
+            name: 'alertEvents',
+            values: settings.alertEvents,
+            options: [
+                {label: 'Failed Login'|t('trails'), value: 'user.login.failed'},
+                {label: 'Element Deleted'|t('trails'), value: 'element.deleted'},
+                {label: 'Permissions Changed'|t('trails'), value: 'user.permissions.changed'},
+            ],
+            instructions: 'Select which event types trigger an alert email.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Failed Login Threshold'|t('trails'),
+            id: 'failedLoginThreshold',
+            name: 'failedLoginThreshold',
+            value: settings.failedLoginThreshold,
+            type: 'number',
+            min: 1,
+            instructions: 'Send alert after this many failed logins from the same IP within 1 hour.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Alert Cooldown (Minutes)'|t('trails'),
+            id: 'alertCooldownMinutes',
+            name: 'alertCooldownMinutes',
+            value: settings.alertCooldownMinutes,
+            type: 'number',
+            min: 1,
+            instructions: 'Minimum time between repeated alerts for the same event type.'|t('trails')
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Save Settings'|t('trails') }}</button>
+        </div>
+    </form>
+
+    <script>
+    (function () {
+        var anchorSelect = document.getElementById('anchorType');
+        var s3Fields = document.getElementById('anchor-s3-fields');
+        var tsaFields = document.getElementById('anchor-rfc3161-fields');
+        function updateVisibility() {
+            s3Fields.style.display = anchorSelect.value === 's3' ? '' : 'none';
+            tsaFields.style.display = anchorSelect.value === 'rfc3161' ? '' : 'none';
+        }
+        if (anchorSelect) {
+            anchorSelect.addEventListener('change', updateVisibility);
+        }
+    }());
+    </script>
+{% endblock %}

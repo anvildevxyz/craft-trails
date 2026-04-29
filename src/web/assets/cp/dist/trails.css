@@ -1,0 +1,709 @@
+/**
+ * Trails Control Panel Styles
+ *
+ * Shares design language with Booked/Whisper CP:
+ *   - 12px radius cards, #e5e7eb borders, white backgrounds
+ *   - Tailwind-aligned color palette
+ *   - Consistent spacing, typography, and component patterns
+ */
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.trails-grid-2,
+.trails-grid-3,
+.trails-grid-4,
+.trails-grid-5 {
+    display: grid;
+    gap: 20px;
+}
+
+.trails-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.trails-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.trails-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.trails-grid-5 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+.trails-mb-24 { margin-bottom: 24px; }
+
+.trails-flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ==========================================================================
+   KPI CARDS
+   ========================================================================== */
+
+.trails-kpi-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.trails-kpi-label {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.trails-kpi-value {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1;
+    color: #111827;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variant-numeric: tabular-nums;
+}
+
+.trails-kpi-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.trails-kpi-footer a {
+    color: #3b82f6;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.trails-kpi-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Color modifiers */
+.trails-color-success { color: #10b981; }
+.trails-color-warning { color: #f59e0b; }
+.trails-color-danger { color: #ef4444; }
+.trails-color-primary { color: #3b82f6; }
+
+/* ==========================================================================
+   WIDGET CARDS
+   ========================================================================== */
+
+.trails-widget-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.trails-widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.trails-widget-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* ==========================================================================
+   FILTER BAR
+   ========================================================================== */
+
+.trails-filter-bar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.trails-filters {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.trails-filters > div {
+    flex: 0 0 auto;
+}
+
+/* Search expands to fill remaining row space */
+.trails-filters > .trails-filter-search {
+    flex: 1 1 220px;
+    min-width: 220px;
+}
+
+.trails-filter-search .heading {
+    margin-bottom: 4px;
+}
+
+/* Group "Date from" + "Date to" under a single label so they never wrap apart */
+.trails-filter-daterange-group .heading {
+    margin-bottom: 4px;
+}
+
+.trails-filter-daterange {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.trails-filter-daterange .datewrapper {
+    flex: 0 0 auto;
+}
+
+.trails-filter-daterange-sep {
+    color: #9ca3af;
+    font-size: 14px;
+    flex: 0 0 auto;
+}
+
+/* Action buttons break to a new line, right-aligned */
+.trails-filters > .trails-filter-actions {
+    flex: 1 0 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.trails-filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ==========================================================================
+   RESULTS & PAGINATION
+   ========================================================================== */
+
+.trails-results-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 16px 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.trails-results-bar a {
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.trails-results-bar a:hover {
+    text-decoration: underline;
+}
+
+.trails-results-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.trails-inline-export {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.trails-inline-export .select.small select {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    font-size: 12px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.trails-pagination {
+    margin-top: 16px;
+    text-align: center;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.trails-pagination-info {
+    padding: 0 8px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   TABLE ENHANCEMENTS
+   ========================================================================== */
+
+.trails-widget-card .data { margin: 0; }
+.trails-widget-card .data td,
+.trails-widget-card .data th {
+    padding: 10px 16px;
+}
+
+/* ==========================================================================
+   BADGES
+   ========================================================================== */
+
+.trails-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.trails-badge--success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.trails-badge--danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.trails-badge--warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.trails-badge--info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* ==========================================================================
+   CODE DISPLAY
+   ========================================================================== */
+
+.trails-code {
+    font-family: monospace;
+    font-size: 0.85em;
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.trails-code--block {
+    display: block;
+    word-break: break-all;
+}
+
+/* Pre-formatted JSON */
+.trails-pre {
+    background: #f3f4f6;
+    padding: 16px;
+    overflow-x: auto;
+    border-radius: 8px;
+    font-size: 13px;
+    margin: 0;
+}
+
+.trails-pre--old {
+    background: #fef2f2;
+}
+
+.trails-pre--new {
+    background: #f0fdf4;
+}
+
+/* Changes Comparison */
+.trails-changes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.trails-changes h4 {
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
+
+.trails-empty-state {
+    text-align: center;
+    color: #9ca3af;
+    padding: 48px 24px;
+}
+
+.trails-empty-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 8px;
+}
+
+.trails-empty-text {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* ==========================================================================
+   ALERT BOXES
+   ========================================================================== */
+
+.trails-alert {
+    padding: 16px;
+    border-radius: 12px;
+    border-left: 4px solid;
+}
+
+.trails-alert-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.trails-alert-text {
+    font-size: 14px;
+}
+
+.trails-alert.alert-info {
+    background: #f0f9ff;
+    border-color: #3b82f6;
+}
+.trails-alert.alert-info .trails-alert-title { color: #1e40af; }
+.trails-alert.alert-info .trails-alert-text { color: #1e3a8a; }
+
+.trails-alert.alert-warning {
+    background: #fef3c7;
+    border-color: #f59e0b;
+}
+.trails-alert.alert-warning .trails-alert-title { color: #92400e; }
+.trails-alert.alert-warning .trails-alert-text { color: #78350f; }
+
+.trails-alert.alert-danger {
+    background: #fee2e2;
+    border-color: #ef4444;
+}
+.trails-alert.alert-danger .trails-alert-title { color: #991b1b; }
+.trails-alert.alert-danger .trails-alert-text { color: #7f1d1d; }
+
+/* ==========================================================================
+   INFO BOX (settings storage, tips)
+   ========================================================================== */
+
+.trails-info-box {
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.trails-info-box code {
+    font-size: 12px;
+}
+
+/* ==========================================================================
+   EXPORT PAGE
+   ========================================================================== */
+
+.trails-export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.trails-export-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+.trails-divider {
+    margin: 24px 0;
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* ==========================================================================
+   QUICK ACTIONS
+   ========================================================================== */
+
+.trails-quick-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* ==========================================================================
+   SETTINGS SECTIONS
+   ========================================================================== */
+
+.trails-settings-section {
+    margin-top: 24px;
+}
+
+.trails-settings-section p {
+    color: #6b7280;
+    margin-bottom: 16px;
+}
+
+.trails-maintenance {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 24px;
+}
+
+.trails-maintenance p {
+    margin-bottom: 12px;
+}
+
+.trails-cli-hint {
+    margin-top: 12px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.trails-storage-warning {
+    color: #d97706;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   DASHBOARD WIDGET
+   ========================================================================== */
+
+.trails-widget-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.trails-widget-stat {
+    text-align: center;
+    flex: 1;
+}
+
+.trails-widget-stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+}
+
+.trails-widget-stat-label {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.trails-sparkline {
+    width: 100%;
+    height: 60px;
+    display: block;
+}
+
+/* ==========================================================================
+   SECTION TITLE (detail view)
+   ========================================================================== */
+
+.trails-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 12px;
+}
+
+/* ==========================================================================
+   TIPS LIST
+   ========================================================================== */
+
+.trails-tips {
+    margin-top: 24px;
+}
+
+.trails-tips h3 {
+    margin-bottom: 8px;
+}
+
+.trails-tips ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #6b7280;
+}
+
+.trails-tips li {
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+/* ==========================================================================
+   HTMX ANIMATIONS
+   ========================================================================== */
+
+.trails-row-new {
+    animation: trails-highlight 3s ease-out;
+}
+
+@keyframes trails-highlight {
+    0% { background-color: #dbeafe; }
+    100% { background-color: transparent; }
+}
+
+/* ==========================================================================
+   LIVE TOGGLE
+   ========================================================================== */
+
+.trails-live-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #6b7280;
+    user-select: none;
+}
+
+.trails-live-toggle input[type="checkbox"] {
+    display: none;
+}
+
+.trails-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    transition: background 0.2s;
+}
+
+.trails-live-toggle.active .trails-live-dot {
+    background: #ef4444;
+    animation: trails-pulse 2s infinite;
+}
+
+@keyframes trails-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.trails-loading-indicator {
+    display: none;
+    text-align: center;
+    padding: 12px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.htmx-request .trails-loading-indicator {
+    display: block;
+}
+
+/* ==========================================================================
+   TIMELINE
+   ========================================================================== */
+
+.trails-timeline {
+    position: relative;
+    padding-left: 32px;
+}
+
+.trails-timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.trails-timeline-item {
+    position: relative;
+    padding-bottom: 24px;
+}
+
+.trails-timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.trails-timeline-dot {
+    position: absolute;
+    left: -26px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #e5e7eb;
+}
+
+.trails-timeline-dot--success, .trails-timeline-dot--created { background: #10b981; }
+.trails-timeline-dot--danger, .trails-timeline-dot--deleted { background: #ef4444; }
+.trails-timeline-dot--warning { background: #f59e0b; }
+
+.trails-timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.trails-timeline-time {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.trails-timeline-event {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.trails-timeline-user {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.trails-timeline-details {
+    margin-top: 8px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   CHAIN POSITION
+   ========================================================================== */
+
+.trails-chain-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.trails-chain-position {
+    font-family: monospace;
+    font-size: 13px;
+    color: #6b7280;
+}

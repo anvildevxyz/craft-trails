@@ -1,0 +1,167 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set selectedSubnavItem = 'settings' %}
+{% set selectedSettingsSubnavItem = 'integrations' %}
+{% set title = "Integrations"|t('trails') %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include 'trails/settings/_sidebar' %}
+{% endblock %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="trails/cp/settings/save">
+        {{ redirectInput('trails/settings/integrations') }}
+
+        <h2 class="heading first">{{ 'External Log Shipping'|t('trails') }}</h2>
+        <p class="light">{{ 'Send audit logs to external services for centralized monitoring.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Enable External Shipping'|t('trails'),
+            id: 'externalLoggingEnabled',
+            name: 'externalLoggingEnabled',
+            on: settings.externalLoggingEnabled,
+            instructions: 'Send logs to an external service via queue.'|t('trails')
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Provider'|t('trails'),
+            id: 'externalProvider',
+            name: 'externalProvider',
+            value: settings.externalProvider,
+            options: [
+                {label: 'Webhook (Generic)', value: 'webhook'},
+                {label: 'Splunk HEC', value: 'splunk'},
+                {label: 'Datadog', value: 'datadog'},
+                {label: 'AWS S3 / Lambda', value: 's3'},
+            ],
+            instructions: 'Select the external logging provider.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Endpoint URL'|t('trails'),
+            id: 'externalEndpoint',
+            name: 'externalEndpoint',
+            value: settings.externalEndpoint,
+            instructions: 'The URL to send logs to (e.g., Splunk HEC endpoint, Datadog intake, or custom webhook).'|t('trails')
+        }) }}
+
+        {{ forms.passwordField({
+            label: 'API Key'|t('trails'),
+            id: 'externalApiKey',
+            name: 'externalApiKey',
+            value: settings.externalApiKey,
+            instructions: 'API key or token for authentication with the external service.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Batch Size'|t('trails'),
+            id: 'externalBatchSize',
+            name: 'externalBatchSize',
+            value: settings.externalBatchSize,
+            type: 'number',
+            min: 1,
+            instructions: 'Number of log entries to ship per queue job.'|t('trails')
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Webhook Secret'|t('trails'),
+            instructions: 'Optional shared secret for signing webhook payloads. Supports $ENV_VAR syntax.'|t('trails'),
+            id: 'webhookSecret',
+            name: 'webhookSecret',
+            value: settings.webhookSecret,
+            suggestEnvVars: true,
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'GeoIP'|t('trails') }}</h2>
+        <p class="light">{{ 'Resolve visitor IP addresses to geographic locations.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Enable Geolocation'|t('trails'),
+            instructions: 'Resolve IP addresses to country/region/city via an external API. Adds a small delay per log write.'|t('trails'),
+            id: 'enableGeoIp',
+            name: 'enableGeoIp',
+            on: settings.enableGeoIp,
+        }) }}
+
+        {{ forms.textField({
+            label: 'Geolocation Endpoint'|t('trails'),
+            instructions: 'URL template. Must use HTTPS. Default: https://pro.ip-api.com/json/'|t('trails'),
+            id: 'geoIpEndpoint',
+            name: 'geoIpEndpoint',
+            value: settings.geoIpEndpoint,
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'API'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure REST and GraphQL API access.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Enable REST API'|t('trails'),
+            id: 'enableApi',
+            name: 'enableApi',
+            on: settings.enableApi,
+            instructions: 'Expose audit log data via the Trails REST API.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Enable GraphQL'|t('trails'),
+            id: 'enableGraphql',
+            name: 'enableGraphql',
+            on: settings.enableGraphql,
+            instructions: 'Register Trails types and queries in Craft\'s GraphQL schema.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'API Rate Limit'|t('trails'),
+            id: 'apiRateLimit',
+            name: 'apiRateLimit',
+            value: settings.apiRateLimit,
+            type: 'number',
+            min: 0,
+            instructions: 'Maximum API requests per minute per token. Set to 0 for no limit.'|t('trails')
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'Real-time'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure live log streaming in the control panel.'|t('trails') }}</p>
+
+        {{ forms.selectField({
+            label: 'Real-time Mode'|t('trails'),
+            id: 'realtime',
+            name: 'realtime',
+            value: settings.realtime,
+            options: [
+                {label: 'Polling'|t('trails'), value: 'poll'},
+                {label: 'Server-Sent Events (SSE)'|t('trails'), value: 'sse'},
+            ],
+            instructions: 'How the control panel live view fetches new log entries.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Max SSE Connections'|t('trails'),
+            id: 'maxSseConnections',
+            name: 'maxSseConnections',
+            value: settings.maxSseConnections,
+            type: 'number',
+            min: 1,
+            max: 50,
+            instructions: 'Maximum concurrent server-sent event connections. Between 1 and 50.'|t('trails')
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Save Settings'|t('trails') }}</button>
+        </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends '_layouts/cp' %}
+{% set title = 'Integrity'|t('trails') %}
+{% set selectedSubnavItem = 'integrity' %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block content %}
+    <div style="max-width: 800px;">
+
+        {# Last Run Status #}
+        {% if lastRun %}
+            <div class="trails-widget-card trails-mb-24">
+                <div class="trails-widget-header">
+                    <h3 class="trails-widget-title">{{ 'Last Verification'|t('trails') }}</h3>
+                </div>
+                <table class="data fullwidth" style="margin-top: 8px;">
+                    <tr>
+                        <th style="width: 200px;">{{ 'Run At'|t('trails') }}</th>
+                        <td>{{ lastRun.at|date('Y-m-d H:i:s') }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ 'Verified'|t('trails') }}</th>
+                        <td>{{ lastRun.verified ?? 0 }} / {{ lastRun.total ?? 0 }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ 'Status'|t('trails') }}</th>
+                        <td>
+                            {% if lastRun.overallStatus is defined %}
+                                {% if lastRun.overallStatus == 'passed' %}
+                                    <span class="trails-badge trails-badge--success">{{ 'All Clear'|t('trails') }}</span>
+                                {% else %}
+                                    <span class="trails-badge trails-badge--danger">{{ 'Issues Found'|t('trails') }}</span>
+                                {% endif %}
+                            {% elseif lastRun.tampered is defined and lastRun.tampered|length > 0 %}
+                                <span class="trails-badge trails-badge--danger">
+                                    {{ lastRun.tampered|length }} {{ 'tampered record(s) found'|t('trails') }}
+                                </span>
+                            {% else %}
+                                <span class="trails-badge trails-badge--success">{{ 'All Clear'|t('trails') }}</span>
+                            {% endif %}
+                            {% if lastRun.tampered is defined and lastRun.tampered|length > 0 %}
+                                <br><small class="light">{{ 'Tampered IDs:'|t('trails') }} {{ lastRun.tampered|join(', ') }}</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if lastRun.merkleRootsVerified is defined or lastRun.merkleRootsFailed is defined %}
+                        <tr>
+                            <th>{{ 'Merkle Roots'|t('trails') }}</th>
+                            <td>
+                                {{ lastRun.merkleRootsVerified ?? 0 }} {{ 'verified'|t('trails') }}
+                                {% if (lastRun.merkleRootsFailed ?? 0) > 0 %}
+                                    &middot; <span class="trails-badge trails-badge--danger">{{ lastRun.merkleRootsFailed }} {{ 'failed'|t('trails') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                    {% if lastRun.anchorsVerified is defined or lastRun.anchorsFailed is defined %}
+                        <tr>
+                            <th>{{ 'External Anchors'|t('trails') }}</th>
+                            <td>
+                                {{ lastRun.anchorsVerified ?? 0 }} {{ 'verified'|t('trails') }}
+                                {% if (lastRun.anchorsFailed ?? 0) > 0 %}
+                                    &middot; <span class="trails-badge trails-badge--danger">{{ lastRun.anchorsFailed }} {{ 'failed'|t('trails') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+        {% endif %}
+
+        {# Verify Button #}
+        <div class="trails-widget-card trails-mb-24">
+            <div class="trails-widget-header">
+                <h3 class="trails-widget-title">{{ 'Verify All Logs'|t('trails') }}</h3>
+            </div>
+            <p class="light">{{ 'Check integrity hashes, chain links, Merkle roots, and external anchors.'|t('trails') }}</p>
+            <form method="post" accept-charset="UTF-8" style="margin-top: 16px;">
+                {{ csrfInput() }}
+                {{ actionInput('trails/cp/integrity/verify') }}
+                {{ redirectInput('trails/integrity') }}
+                <button type="submit" class="btn submit">{{ 'Run Verification'|t('trails') }}</button>
+                <span class="light" style="margin-left: 12px;">{{ 'May take a few minutes for large log tables.'|t('trails') }}</span>
+            </form>
+        </div>
+
+        {# Certificate Generation #}
+        <div class="trails-widget-card">
+            <div class="trails-widget-header">
+                <h3 class="trails-widget-title">{{ 'Certificate of Integrity'|t('trails') }}</h3>
+            </div>
+            <p class="light">{{ 'Generate a signed certificate for auditors covering a specific date range.'|t('trails') }}</p>
+            <form method="post" accept-charset="UTF-8" style="margin-top: 16px;">
+                {{ csrfInput() }}
+                {{ actionInput('trails/cp/integrity/certificate') }}
+
+                <div class="field" style="margin-bottom: 16px;">
+                    <div class="heading"><label for="dateFrom">{{ 'From'|t('trails') }}</label></div>
+                    <div class="input"><input type="date" id="dateFrom" name="dateFrom" class="text" required></div>
+                </div>
+
+                <div class="field" style="margin-bottom: 16px;">
+                    <div class="heading"><label for="dateTo">{{ 'To'|t('trails') }}</label></div>
+                    <div class="input"><input type="date" id="dateTo" name="dateTo" class="text" required></div>
+                </div>
+
+                <div class="field" style="margin-bottom: 16px;">
+                    <div class="heading"><label>{{ 'Format'|t('trails') }}</label></div>
+                    <div class="input">
+                        <label><input type="radio" name="format" value="json" checked> JSON (machine-verifiable)</label><br>
+                        <label><input type="radio" name="format" value="pdf"> PDF (human-readable)</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn submit">{{ 'Generate Certificate'|t('trails') }}</button>
+            </form>
+        </div>
+
+    </div>
+{% endblock %}

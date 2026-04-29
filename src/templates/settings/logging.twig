@@ -1,0 +1,116 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set selectedSubnavItem = 'settings' %}
+{% set selectedSettingsSubnavItem = 'logging' %}
+{% set title = "Logging Settings"|t('trails') %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include 'trails/settings/_sidebar' %}
+{% endblock %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="trails/cp/settings/save">
+        {{ redirectInput('trails/settings/logging') }}
+
+        <h2 class="heading first">{{ 'What to Log'|t('trails') }}</h2>
+        <p class="light">{{ 'Configure which events should be tracked.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Element Changes'|t('trails'),
+            id: 'logElements',
+            name: 'logElements',
+            on: settings.logElements,
+            instructions: 'Log when entries, assets, users, and other elements are created, updated, or deleted.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'User Authentication'|t('trails'),
+            id: 'logAuthentication',
+            name: 'logAuthentication',
+            on: settings.logAuthentication,
+            instructions: 'Log user logins and logouts.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Failed Login Attempts'|t('trails'),
+            id: 'logFailedLogins',
+            name: 'logFailedLogins',
+            on: settings.logFailedLogins,
+            instructions: 'Log failed authentication attempts for security monitoring.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Permission Changes'|t('trails'),
+            id: 'logPermissionChanges',
+            name: 'logPermissionChanges',
+            on: settings.logPermissionChanges,
+            instructions: 'Log when user permissions or group assignments change.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Config Changes'|t('trails'),
+            id: 'logConfigChanges',
+            name: 'logConfigChanges',
+            on: settings.logConfigChanges,
+            instructions: 'Log when project config changes are applied.'|t('trails')
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Asset Operations'|t('trails'),
+            id: 'logAssets',
+            name: 'logAssets',
+            on: settings.logAssets,
+            instructions: 'Log asset uploads, replacements, and modifications.'|t('trails')
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'Exclusions'|t('trails') }}</h2>
+        <p class="light">{{ 'Specify element types and sections to exclude from logging.'|t('trails') }}</p>
+
+        {{ forms.checkboxSelectField({
+            label: 'Excluded Element Types'|t('trails'),
+            id: 'excludedElementTypes',
+            name: 'excludedElementTypes',
+            values: settings.excludedElementTypes,
+            options: [
+                {label: 'Entries', value: 'craft\\elements\\Entry'},
+                {label: 'Assets', value: 'craft\\elements\\Asset'},
+                {label: 'Users', value: 'craft\\elements\\User'},
+                {label: 'Categories', value: 'craft\\elements\\Category'},
+                {label: 'Tags', value: 'craft\\elements\\Tag'},
+                {label: 'Global Sets', value: 'craft\\elements\\GlobalSet'},
+                {label: 'Matrix Blocks', value: 'craft\\elements\\MatrixBlock'},
+            ],
+            instructions: 'Select element types to exclude from audit logging.'|t('trails')
+        }) }}
+
+        {% set sectionOptions = [] %}
+        {% for section in craft.app.entries.allSections %}
+            {% set sectionOptions = sectionOptions|merge([{label: section.name, value: section.handle}]) %}
+        {% endfor %}
+
+        {% if sectionOptions|length %}
+            {{ forms.checkboxSelectField({
+                label: 'Excluded Sections'|t('trails'),
+                id: 'excludedSections',
+                name: 'excludedSections',
+                values: settings.excludedSections,
+                options: sectionOptions,
+                instructions: 'Select sections to exclude from audit logging (only applies to Entry elements).'|t('trails')
+            }) }}
+        {% endif %}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Save Settings'|t('trails') }}</button>
+        </div>
+    </form>
+{% endblock %}

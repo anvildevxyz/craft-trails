@@ -1,0 +1,17 @@
+{% set settingsSubnavItems = {
+    'general': { label: 'General'|t('trails'), url: url('trails/settings/general') },
+    'security': { label: 'Security & Compliance'|t('trails'), url: url('trails/settings/security') },
+    'integrations': { label: 'Integrations'|t('trails'), url: url('trails/settings/integrations') },
+} %}
+
+<nav id="settings-nav">
+    <ul>
+        {% for key, item in settingsSubnavItems %}
+            <li>
+                <a href="{{ item.url }}" class="{% if key == selectedSettingsSubnavItem %}sel{% endif %}">
+                    {{ item.label }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</nav>

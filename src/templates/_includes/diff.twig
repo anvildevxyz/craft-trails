@@ -1,0 +1,41 @@
+{# Renders a structured diff from DiffRenderer::compare() output #}
+{# Expects: diff (list of change entries), optionally: collapsedByDefault (bool) #}
+{% set collapsedByDefault = collapsedByDefault ?? true %}
+{% set hasChanges = false %}
+{% for item in diff if item.change != 'unchanged' %}{% set hasChanges = true %}{% endfor %}
+
+<table class="data fullwidth trails-diff">
+    <thead>
+        <tr>
+            <th style="width: 30%">{{ 'Field'|t('trails') }}</th>
+            <th style="width: 35%">{{ 'Old'|t('trails') }}</th>
+            <th style="width: 35%">{{ 'New'|t('trails') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in diff %}
+            {% if item.change != 'unchanged' or not collapsedByDefault %}
+                <tr class="trails-diff--{{ item.change }}">
+                    <td><code>{{ item.key }}</code></td>
+                    <td>
+                        {% if item.change == 'added' %}
+                            <em>{{ '—'|t('trails') }}</em>
+                        {% else %}
+                            <code>{{ item.oldValue is iterable ? item.oldValue|json_encode : item.oldValue|default('—') }}</code>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.change == 'removed' %}
+                            <em>{{ '—'|t('trails') }}</em>
+                        {% else %}
+                            <code>{{ item.newValue is iterable ? item.newValue|json_encode : item.newValue|default('—') }}</code>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+        {% if not hasChanges %}
+            <tr><td colspan="3"><em>{{ 'No changes detected.'|t('trails') }}</em></td></tr>
+        {% endif %}
+    </tbody>
+</table>

@@ -1,0 +1,82 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set selectedSubnavItem = 'settings' %}
+{% set selectedSettingsSubnavItem = 'external' %}
+{% set title = "External Log Shipping"|t('trails') %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include 'trails/settings/_sidebar' %}
+{% endblock %}
+
+{% block content %}
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        <input type="hidden" name="action" value="trails/cp/settings/save">
+        {{ redirectInput('trails/settings/external') }}
+
+        <h2 class="heading first">{{ 'External Log Shipping'|t('trails') }}</h2>
+        <p class="light">{{ 'Send audit logs to external services for centralized monitoring.'|t('trails') }}</p>
+
+        {{ forms.lightswitchField({
+            label: 'Enable External Shipping'|t('trails'),
+            id: 'externalLoggingEnabled',
+            name: 'externalLoggingEnabled',
+            on: settings.externalLoggingEnabled,
+            instructions: 'Send logs to an external service via queue.'|t('trails')
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Provider'|t('trails'),
+            id: 'externalProvider',
+            name: 'externalProvider',
+            value: settings.externalProvider,
+            options: [
+                {label: 'Webhook (Generic)', value: 'webhook'},
+                {label: 'Splunk HEC', value: 'splunk'},
+                {label: 'Datadog', value: 'datadog'},
+                {label: 'AWS S3 / Lambda', value: 's3'},
+            ],
+            instructions: 'Select the external logging provider.'|t('trails')
+        }) }}
+
+        {{ forms.textField({
+            label: 'Endpoint URL'|t('trails'),
+            id: 'externalEndpoint',
+            name: 'externalEndpoint',
+            value: settings.externalEndpoint,
+            instructions: 'The URL to send logs to (e.g., Splunk HEC endpoint, Datadog intake, or custom webhook).'|t('trails')
+        }) }}
+
+        {{ forms.passwordField({
+            label: 'API Key'|t('trails'),
+            id: 'externalApiKey',
+            name: 'externalApiKey',
+            value: settings.externalApiKey,
+            instructions: 'API key or token for authentication with the external service.'|t('trails')
+        }) }}
+
+        <hr>
+
+        <h2>{{ 'Webhook Signature'|t('trails') }}</h2>
+        <p class="light">{{ 'Sign outgoing webhook payloads with a shared secret so receivers can verify authenticity.'|t('trails') }}</p>
+
+        {{ forms.autosuggestField({
+            label: 'Webhook Secret'|t('trails'),
+            instructions: 'Optional shared secret for signing webhook payloads. Supports $ENV_VAR syntax.'|t('trails'),
+            id: 'webhookSecret',
+            name: 'webhookSecret',
+            value: settings.webhookSecret,
+            suggestEnvVars: true,
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Save Settings'|t('trails') }}</button>
+        </div>
+    </form>
+{% endblock %}

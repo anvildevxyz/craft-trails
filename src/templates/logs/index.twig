@@ -1,0 +1,237 @@
+{% extends '_layouts/cp' %}
+{% import "_includes/forms" as forms %}
+{% set title = 'Activity Logs'|t('trails') %}
+{% set selectedSubnavItem = 'logs' %}
+
+{% block head %}
+    {{ parent() }}
+    {% do view.registerAssetBundle('anvildev\\trails\\web\\assets\\cp\\CpAsset') %}
+{% endblock %}
+
+{% block content %}
+    {# Summary Cards #}
+    <div class="trails-grid-5 trails-mb-24">
+        <div class="trails-kpi-card">
+            <div class="trails-kpi-label">{{ 'Events (7d)'|t('trails') }}</div>
+            <div class="trails-kpi-value">{{ summary.totalEvents|number_format }}</div>
+        </div>
+        <div class="trails-kpi-card">
+            <div class="trails-kpi-label">{{ 'Logins'|t('trails') }}</div>
+            <div class="trails-kpi-value trails-color-primary">{{ summary.logins|number_format }}</div>
+        </div>
+        <div class="trails-kpi-card">
+            <div class="trails-kpi-label">{{ 'Created'|t('trails') }}</div>
+            <div class="trails-kpi-value trails-color-success">{{ summary.elementsCreated|number_format }}</div>
+        </div>
+        <div class="trails-kpi-card">
+            <div class="trails-kpi-label">{{ 'Updated'|t('trails') }}</div>
+            <div class="trails-kpi-value">{{ summary.elementsUpdated|number_format }}</div>
+        </div>
+        <div class="trails-kpi-card">
+            <div class="trails-kpi-label">{{ 'Deleted'|t('trails') }}</div>
+            <div class="trails-kpi-value trails-color-danger">{{ summary.elementsDeleted|number_format }}</div>
+        </div>
+    </div>
+
+    {# Filters #}
+    <div class="trails-filter-bar trails-mb-24">
+        <form method="get" action="{{ cpUrl('trails/logs') }}" id="trails-filter-form">
+            <div class="trails-filters">
+                <div>
+                    <label class="heading">{{ 'Event Type'|t('trails') }}</label>
+                    <div class="select">
+                        <select name="event"
+                                hx-get="{{ cpUrl('trails/stream/table') }}"
+                                hx-target="#trails-log-tbody"
+                                hx-trigger="change"
+                                hx-include="closest form"
+                                hx-swap="innerHTML">
+                            <option value="">{{ 'All Events'|t('trails') }}</option>
+                            {% for eventType in eventTypes %}
+                                <option value="{{ eventType }}" {{ (criteria.event ?? '') == eventType ? 'selected' }}>{{ eventType }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="heading">{{ 'Category'|t('trails') }}</label>
+                    <div class="select">
+                        <select name="category"
+                                hx-get="{{ cpUrl('trails/stream/table') }}"
+                                hx-target="#trails-log-tbody"
+                                hx-trigger="change"
+                                hx-include="closest form"
+                                hx-swap="innerHTML">
+                            <option value="">{{ 'All Categories'|t('trails') }}</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat }}" {{ (criteria.category ?? '') == cat ? 'selected' }}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="heading">{{ 'User'|t('trails') }}</label>
+                    <div class="select">
+                        <select name="userId"
+                                hx-get="{{ cpUrl('trails/stream/table') }}"
+                                hx-target="#trails-log-tbody"
+                                hx-trigger="change"
+                                hx-include="closest form"
+                                hx-swap="innerHTML">
+                            <option value="">{{ 'All Users'|t('trails') }}</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {{ (criteria.userId ?? '') == user.id ? 'selected' }}>{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="trails-filter-daterange-group">
+                    <label class="heading">{{ 'Date range'|t('trails') }}</label>
+                    <div class="trails-filter-daterange">
+                        {{ forms.date({
+                            id: 'dateFrom',
+                            name: 'dateFrom',
+                            value: dateFromRaw ?? null,
+                            class: 'hx-date-filter',
+                            'data-hx-get': cpUrl('trails/stream/table'),
+                            'data-hx-target': '#trails-log-tbody',
+                            'data-hx-trigger': 'change',
+                            'data-hx-include': 'closest form',
+                            'data-hx-swap': 'innerHTML',
+                        }) }}
+                        <span class="trails-filter-daterange-sep" aria-hidden="true">→</span>
+                        {{ forms.date({
+                            id: 'dateTo',
+                            name: 'dateTo',
+                            value: dateToRaw ?? null,
+                            class: 'hx-date-filter',
+                            'data-hx-get': cpUrl('trails/stream/table'),
+                            'data-hx-target': '#trails-log-tbody',
+                            'data-hx-trigger': 'change',
+                            'data-hx-include': 'closest form',
+                            'data-hx-swap': 'innerHTML',
+                        }) }}
+                    </div>
+                </div>
+                <div class="trails-filter-search">
+                    <label class="heading" for="trails-search">{{ 'Search'|t('trails') }}</label>
+                    <input id="trails-search" type="text" class="text fullwidth" name="search"
+                           value="{{ criteria.search ?? '' }}"
+                           placeholder="{{ 'Search logs...'|t('trails') }}"
+                           hx-get="{{ cpUrl('trails/stream/table') }}"
+                           hx-target="#trails-log-tbody"
+                           hx-trigger="keyup changed delay:400ms"
+                           hx-include="closest form"
+                           hx-swap="innerHTML">
+                </div>
+                <div class="trails-filter-actions">
+                    <button type="submit" class="btn submit">{{ 'Filter'|t('trails') }}</button>
+                    <a href="{{ cpUrl('trails/logs') }}" class="btn">{{ 'Reset'|t('trails') }}</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# Results Bar + Live Toggle #}
+    <div x-data="{ live: false }">
+        <div class="trails-results-bar">
+            <span>{{ 'Showing {count} of {total} logs'|t('trails', {count: logs|length, total: totalLogs}) }}</span>
+            <div class="trails-results-bar-right">
+                {# Live polling toggle #}
+                <div>
+                    <label class="trails-live-toggle" :class="{ active: live }">
+                        <input type="checkbox" x-model="live">
+                        <span class="trails-live-dot"></span>
+                        <span x-text="live ? '{{ 'Live'|t('trails') }}' : '{{ 'Paused'|t('trails') }}'">{{ 'Paused'|t('trails') }}</span>
+                    </label>
+                </div>
+
+                {% if currentUser.can('trails-exportLogs') and totalLogs > 0 %}
+                    <form method="post" action="" class="trails-inline-export">
+                        {{ csrfInput() }}
+                        {{ actionInput('trails/cp/export/download') }}
+                        <input type="hidden" name="event" value="{{ criteria.event ?? '' }}">
+                        <input type="hidden" name="category" value="{{ criteria.category ?? '' }}">
+                        <input type="hidden" name="userId" value="{{ criteria.userId ?? '' }}">
+                        <input type="hidden" name="dateFrom" value="{{ dateFromRaw ?? '' }}">
+                        <input type="hidden" name="dateTo" value="{{ dateToRaw ?? '' }}">
+                        <label class="heading visually-hidden" for="trails-inline-export-format">{{ 'Export format'|t('trails') }}</label>
+                        <div class="select small">
+                            <select id="trails-inline-export-format" name="format">
+                                <option value="csv">CSV</option>
+                                <option value="json">JSON</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn small submit" data-icon="download">{{ 'Export'|t('trails') }}</button>
+                    </form>
+                {% endif %}
+
+                <div>
+                    <span>{{ 'Per page'|t('trails') }}:</span>
+                    {% for size in [25, 50, 100] %}
+                        {% if pageSize == size %}
+                            <strong>{{ size }}</strong>
+                        {% else %}
+                            <a href="{{ cpUrl('trails/logs', criteria|merge({pageSize: size, offset: 0})) }}">{{ size }}</a>
+                        {% endif %}
+                        {% if not loop.last %} · {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# Results Table #}
+        <div class="trails-widget-card">
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th>{{ 'Timestamp'|t('trails') }}</th>
+                        <th>{{ 'Event'|t('trails') }}</th>
+                        <th>{{ 'User'|t('trails') }}</th>
+                        <th>{{ 'Element'|t('trails') }}</th>
+                        <th>{{ 'IP Address'|t('trails') }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <div id="trails-log-table"
+                     hx-get="{{ cpUrl('trails/stream/table') }}{% if criteria is not empty %}?{{ criteria|url_encode }}{% endif %}"
+                     :hx-trigger="live ? 'every 5s' : 'none'"
+                     hx-target="#trails-log-tbody"
+                     hx-swap="innerHTML">
+                    {% include 'trails/logs/_table' with {logs: logs} %}
+                </div>
+            </table>
+
+            <div class="trails-loading-indicator htmx-indicator">{{ 'Loading...'|t('trails') }}</div>
+
+            {% if logs|length == 0 %}
+                <div class="trails-empty-state">
+                    <p class="trails-empty-title">{{ 'No audit logs found.'|t('trails') }}</p>
+                </div>
+            {% endif %}
+
+            {# Pagination #}
+            {% set limit = pageSize %}
+            {% if totalLogs > limit %}
+                {% set currentOffset = criteria.offset ?? 0 %}
+                {% set currentPage = (currentOffset / limit)|round(0, 'floor') + 1 %}
+                {% set totalPages = ((totalLogs / limit)|round(0, 'ceil')) %}
+                <div class="trails-pagination">
+                    {% if currentPage > 1 %}
+                        <a href="{{ cpUrl('trails/logs', criteria|merge({offset: 0, pageSize: limit})) }}" class="btn small">{{ '« First'|t('trails') }}</a>
+                        <a href="{{ cpUrl('trails/logs', criteria|merge({offset: (currentPage - 2) * limit, pageSize: limit})) }}" class="btn small">{{ '‹ Prev'|t('trails') }}</a>
+                    {% endif %}
+
+                    <span class="trails-pagination-info">
+                        {{ 'Page {current} of {total}'|t('trails', {current: currentPage, total: totalPages}) }}
+                    </span>
+
+                    {% if currentPage < totalPages %}
+                        <a href="{{ cpUrl('trails/logs', criteria|merge({offset: currentPage * limit, pageSize: limit})) }}" class="btn small">{{ 'Next ›'|t('trails') }}</a>
+                        <a href="{{ cpUrl('trails/logs', criteria|merge({offset: (totalPages - 1) * limit, pageSize: limit})) }}" class="btn small">{{ 'Last »'|t('trails') }}</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
