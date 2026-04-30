@@ -20,6 +20,8 @@ Items deferred from 1.0.0 launch, grouped by priority. This is a living document
 - **Custom S3 endpoint setting.** New `s3Endpoint` setting + `use_path_style_endpoint` plumbing in `S3AnchorBackend::client()`. Unblocks Cloudflare R2, MinIO, Wasabi, AWS GovCloud — all of which support Object Lock. Concrete enterprise compliance ask.
 - **`--re-anchor=s3` CLI command.** `IntegrityController::actionAnchor` doesn't exist today; operators with legacy hex-HMAC anchorProof rows have to manually delete and re-queue. Add a console action that bulk-re-anchors any rows matching a type predicate.
 - **`needsReanchor` state on `AnchorRecord`.** Currently the integrity report can't visually distinguish "legacy, needs re-anchor" from "tampered". Add a third state so the CP integrity page can guide the operator instead of alarming them.
+- **Plugin install/uninstall listener.** `SystemEventListener` covers user-group, permissions, and project-config changes but does not subscribe to `Plugins::EVENT_AFTER_INSTALL_PLUGIN` / `EVENT_AFTER_UNINSTALL_PLUGIN`. Marketing copy lists "plugin install" under system events — close the gap (or drop the claim). Small listener addition; emit `plugin.installed` / `plugin.uninstalled` with handle + version.
+- **Excluded-field allowlist setting.** PII gating exists at the viewer level (`LogsController` checks `trails-manageSettings`), but there is no config-driven list of fields to exclude from the captured before/after snapshots in `ElementEventListener`. Add an `excludedFields` setting (handle list, optionally per element type) and apply it in the snapshot/diff path so customer-defined sensitive fields never reach `oldValue` / `newValue`.
 
 ## 1.x — Mid-term
 
