@@ -80,6 +80,7 @@ class Trails extends Plugin
         $this->registerEventListeners();
         $this->registerBuiltInBridges();
         $this->eventBridge->bindAll();
+        $this->registerMcpTools();
 
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES, function(RegisterUrlRulesEvent $event) {
             $event->rules += [
@@ -199,6 +200,28 @@ class Trails extends Plugin
     {
         CommerceEventListener::register($this->eventBridge);
         BookedEventListener::register($this->eventBridge);
+    }
+
+    /**
+     * Register Trails' read-only tools with the craft-mcp plugin, when it is
+     * installed. Soft dependency (class_exists-guarded), so Trails runs unchanged
+     * when craft-mcp is absent.
+     */
+    private function registerMcpTools(): void
+    {
+        if (!class_exists(\stimmt\craft\Mcp\Mcp::class)) {
+            return;
+        }
+
+        Event::on(
+            \stimmt\craft\Mcp\Mcp::class,
+            \stimmt\craft\Mcp\Mcp::EVENT_REGISTER_TOOLS,
+            static function(\stimmt\craft\Mcp\events\RegisterToolsEvent $event): void {
+                $event->addTool(\anvildev\trails\mcp\AuditLogTools::class, 'trails');
+                $event->addTool(\anvildev\trails\mcp\ActivityTools::class, 'trails');
+                $event->addTool(\anvildev\trails\mcp\IntegrityTools::class, 'trails');
+            }
+        );
     }
 
     private function registerEventListeners(): void
