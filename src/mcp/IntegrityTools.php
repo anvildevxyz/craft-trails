@@ -11,15 +11,23 @@ use stimmt\craft\Mcp\enums\ToolCategory;
  * MCP tools for verifying the tamper-evidence of the Trails audit trail:
  * per-record HMAC integrity, the prev-hash chain, Merkle roots, external
  * anchors, inclusion proofs, and signed compliance certificates. All read-only
- * (verification re-computes and compares; it never mutates). The full-trail
- * checks scan every (non-dropped) table and can be expensive on large logs.
+ * with respect to audit data — verification re-computes and compares, never
+ * altering a stored record (verifyLogs does write a benign "last integrity run"
+ * timestamp to the cache). The full-trail checks scan every (non-dropped) table
+ * and can be expensive on large logs.
  */
 class IntegrityTools
 {
     use ToolResponseTrait;
 
     /**
-     * @param int $batchSize Rows per verification batch.
+     * Upper bound on rows loaded per verification batch — keeps a caller-supplied
+     * value from pulling an unbounded number of rows into memory at once.
+     */
+    private const BATCH_SIZE_MAX = 5000;
+
+    /**
+     * @param int $batchSize Rows per verification batch (clamped to 1–5000).
      * @return array<string, mixed>
      */
     #[McpTool(
@@ -30,7 +38,7 @@ class IntegrityTools
     public function verifyLogs(int $batchSize = 500): array
     {
         return $this->guard(static fn(): array => [
-            'result' => Trails::getInstance()->audit->verifyAllLogs(max(1, $batchSize)),
+            'result' => Trails::getInstance()->audit->verifyAllLogs(max(1, min(self::BATCH_SIZE_MAX, $batchSize))),
         ]);
     }
 
@@ -45,7 +53,7 @@ class IntegrityTools
     public function verifyChain(int $batchSize = 500): array
     {
         return $this->guard(static fn(): array => [
-            'result' => Trails::getInstance()->audit->verifyChainLinks(max(1, $batchSize)),
+            'result' => Trails::getInstance()->audit->verifyChainLinks(max(1, min(self::BATCH_SIZE_MAX, $batchSize))),
         ]);
     }
 

@@ -130,11 +130,17 @@ class McpToolsTest extends TestCase
     public function testNoDestructiveOrAdminMethodsExposed(): void
     {
         // The MCP surface must never call any write/destructive/admin service method.
+        // This is a denylist tripwire, not exhaustive enforcement: when a new
+        // destructive service method is added, add its name here too. The generic
+        // persistence verbs (->save(/->delete(/->update(/->insert(/->upsert() catch
+        // any direct DB mutation regardless of the service method name.
         $forbidden = [
             'cleanupOldLogs', 'cleanupWithExport', 'rotate', 'dropArchive',
             'issueToken', 'revokeToken', 'computeBatch', 'logCustomEvent',
             'flushShippingBuffer', 'startBackgroundExport', 'writeBackgroundExportFile',
+            'purgeBefore',
             '->anchor(', '->log(',
+            '->save(', '->delete(', '->update(', '->insert(', '->upsert(',
         ];
         $all = '';
         foreach ($this->mcpSourceFiles() as $f) {

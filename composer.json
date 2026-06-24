@@ -1,7 +1,7 @@
 {
     "name": "anvildev/craft-trails",
     "description": "Enterprise-grade audit trail and compliance logging for Craft CMS",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "craft-plugin",
     "keywords": [
         "craft",
