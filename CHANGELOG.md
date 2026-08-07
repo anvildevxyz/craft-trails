@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.1.1 - 2026-08-07
+
+### Fixed
+- Monthly table rotation is now idempotent: a duplicate rotation in the same month (e.g. re-enqueued after a cache flush, or a retried queue job) skips gracefully instead of failing with `Table 'trails_logs_YYYY_MM' already exists`.
+- The garbage-collection hook now checks the durable archive state before enqueueing a rotation job instead of relying solely on a flushable cache key.
+- Archived log-month registry entries now record their `rowCount` and first/last chain positions on the normal rotation path; a migration backfills existing archives.
+
 ## 1.1.0 - 2026-06-24
 
 ### Added

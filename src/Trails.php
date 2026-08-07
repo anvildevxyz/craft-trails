@@ -49,7 +49,7 @@ use yii\base\Event;
  */
 class Trails extends Plugin
 {
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.0.1';
     public bool $hasCpSection = true;
     public bool $hasCpSettings = false;
 
@@ -179,13 +179,18 @@ class Trails extends Plugin
             }
             // Clean up expired exports
             $this->export->cleanupExpiredExports();
-            // Monthly table rotation
+            // Monthly table rotation. The cache key is only a fast path — it
+            // doesn't survive a cache flush, so re-check the durable archive
+            // state before enqueueing a duplicate rotation job (rotate()
+            // itself skips gracefully as a final backstop).
             $currentMonth = date('Y-m');
             $cache = Craft::$app->getCache();
             $lastRotation = $cache->get('trails:lastRotation');
             if ($lastRotation !== $currentMonth) {
                 $cache->set('trails:lastRotation', $currentMonth, 86400 * 35);
-                Craft::$app->getQueue()->push(new \anvildev\trails\jobs\RotateLogTableJob());
+                if (!$this->tableRotation->isRotatedForMonth()) {
+                    Craft::$app->getQueue()->push(new \anvildev\trails\jobs\RotateLogTableJob());
+                }
             }
         });
 

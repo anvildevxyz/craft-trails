@@ -107,17 +107,40 @@ class TableRotationService extends Component
     }
 
     /**
+     * Returns whether the active table has already been rotated for the month
+     * of $now (defaults to the current month) — i.e. whether that month's
+     * archive table exists.
+     *
+     * Unlike the `trails:lastRotation` cache key, this reads durable state and
+     * survives cache flushes.
+     */
+    public function isRotatedForMonth(?\DateTimeImmutable $now = null): bool
+    {
+        $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $archiveName = self::archiveTableName((int) $now->format('Y'), (int) $now->format('n'));
+
+        return Craft::$app->getDb()->tableExists('{{%' . $archiveName . '}}', true);
+    }
+
+    /**
      * Rotates the active table:
      *   1. Renames the active table to an archive name (year_month of now).
      *   2. Creates a fresh active table with the same schema.
      *   3. Updates the registry — marks the old entry archived, inserts a new active entry.
      *
+     * Idempotent per month: if this month's archive table already exists the
+     * rotation is skipped and `false` is returned. Duplicate invocations are a
+     * real scenario — the GC hook's cache guard doesn't survive a cache flush,
+     * and failed queue jobs can be retried.
+     *
+     * @param \DateTimeImmutable|null $now overrides "now" (tests); defaults to the current UTC time
+     * @return bool whether the table was rotated (`false` = already rotated this month)
      * @throws DbException
      */
-    public function rotate(): void
+    public function rotate(?\DateTimeImmutable $now = null): bool
     {
         $db = Craft::$app->getDb();
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
 
         $year = (int) $now->format('Y');
         $month = (int) $now->format('n');
@@ -141,6 +164,20 @@ class TableRotationService extends Component
         }
 
         try {
+            // The archive table is the durable record that this month's
+            // rotation already happened — skip instead of failing on the
+            // RENAME. Checked inside the mutex (with a schema refresh) so two
+            // concurrent rotations serialize and the loser sees the winner's
+            // table.
+            if ($db->tableExists('{{%' . $archiveName . '}}', true)) {
+                Craft::warning(
+                    "Trails: skipping table rotation — archive '{$archiveName}' already exists.",
+                    'trails'
+                );
+
+                return false;
+            }
+
             // Capture the pre-rotate chain state so the post-rotate chain picks
             // up at N+1 instead of restarting at 1. Without this, the first
             // write to the new (empty) active table would compute
@@ -168,9 +205,17 @@ class TableRotationService extends Component
             //     retarget its tableName to the renamed archive table.
             //     Without the tableName update, the registry would keep
             //     pointing at "trails_logs" for the rotated month, breaking
-            //     archive-aware verify/query paths.
+            //     archive-aware verify/query paths. The observed row/chain
+            //     stats are written here too — previously only the 3b
+            //     backstop recorded them, leaving rowCount at 0 on this path.
             LogMonthRecord::updateAll(
-                ['status' => 'archived', 'tableName' => $archiveName],
+                [
+                    'status' => 'archived',
+                    'tableName' => $archiveName,
+                    'rowCount' => $preRotateRowCount,
+                    'firstChainPosition' => $preRotateMinPos ?: null,
+                    'lastChainPosition' => $preRotateMaxPos ?: null,
+                ],
                 ['status' => 'active', 'tableName' => $activeName]
             );
 
@@ -218,6 +263,8 @@ class TableRotationService extends Component
             "Trails: rotated active table '{$activeName}' → archive '{$archiveName}' (chain continues at " . ($preRotateMaxPos + 1) . ")",
             'trails'
         );
+
+        return true;
     }
 
     /**
