@@ -208,11 +208,54 @@ class Trails extends Plugin
     }
 
     /**
-     * Register Trails' read-only tools with the craft-mcp plugin, when it is
-     * installed. Soft dependency (class_exists-guarded), so Trails runs unchanged
-     * when craft-mcp is absent.
+     * Register Trails' read-only tools with Craft 5.12's built-in MCP server
+     * and, when it is installed, with stimmt/craft-mcp. Both are soft
+     * dependencies, so Trails runs unchanged when either is absent.
      */
     private function registerMcpTools(): void
+    {
+        $this->registerCraftMcpTools();
+        $this->registerStimmtMcpTools();
+    }
+
+    /**
+     * Registers the tool classes with Craft's MCP server (5.12+). Every tool
+     * is read-only and requires the view-logs permission.
+     */
+    private function registerCraftMcpTools(): void
+    {
+        if (!class_exists(\craft\services\Mcp::class)) {
+            return;
+        }
+
+        Event::on(
+            \craft\services\Mcp::class,
+            \craft\services\Mcp::EVENT_REGISTER_CAPABILITY_TYPES,
+            static function(\craft\events\RegisterComponentTypesEvent $event): void {
+                $event->types[] = \anvildev\trails\mcp\AuditLogTools::class;
+                $event->types[] = \anvildev\trails\mcp\ActivityTools::class;
+                $event->types[] = \anvildev\trails\mcp\IntegrityTools::class;
+            },
+        );
+
+        if (!class_exists(\craft\mcp\AdminInstructions::class)) {
+            return;
+        }
+
+        Event::on(
+            \craft\mcp\AdminInstructions::class,
+            \craft\mcp\AdminInstructions::EVENT_COLLECT_INSTRUCTIONS,
+            static function(\craft\mcp\events\CollectingAdminInstructions $event): void {
+                $event->instructions[] = 'Use the trails_* tools to search the audit log, summarise activity, and verify log integrity. They are read-only and redact personal data.';
+            },
+        );
+    }
+
+    /**
+     * Registers the tool classes with stimmt/craft-mcp when that plugin is
+     * installed.
+     */
+    private function registerStimmtMcpTools(): void
     {
         if (!class_exists(\stimmt\craft\Mcp\Mcp::class)) {
             return;
@@ -225,7 +268,7 @@ class Trails extends Plugin
                 $event->addTool(\anvildev\trails\mcp\AuditLogTools::class, 'trails');
                 $event->addTool(\anvildev\trails\mcp\ActivityTools::class, 'trails');
                 $event->addTool(\anvildev\trails\mcp\IntegrityTools::class, 'trails');
-            }
+            },
         );
     }
 

@@ -11,7 +11,13 @@ parameters:
     bootstrapFiles:
         - ../../vendor/autoload.php
         - ../../vendor/craftcms/cms/bootstrap/console.php
+    # Craft 5.12 MCP classes and mcp/sdk are absent from the 5.11 tree this
+    # config analyses. The references are class_exists-guarded.
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
+        - '#Mcp\\Schema\\ToolAnnotations#'
+        - '#craft\\mcp\\#'
+        - '#Attribute class Mcp\\Capability\\Attribute\\\w+ does not exist#'
         # ActiveRecord find()->one() returns array|ActiveRecord
         - '#Cannot access property \$\w+ on array\|yii\\db\\ActiveRecord#'
         # Yii/Craft event dynamic properties (e.g., $event->userId on ModelEvent)

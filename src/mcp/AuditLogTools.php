@@ -6,6 +6,8 @@ use anvildev\trails\dto\AuditLogEntry;
 use anvildev\trails\mcp\support\Presenter;
 use anvildev\trails\Trails;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
+use craft\mcp\attributes\RequiresPermission;
 use stimmt\craft\Mcp\attributes\McpToolMeta;
 use stimmt\craft\Mcp\enums\ToolCategory;
 
@@ -79,8 +81,10 @@ class AuditLogTools
         name: 'trails_search_logs',
         description: 'Search the Trails audit log by event, category, user, element, IP, text and date range. '
             . 'Cursor-paginated; actor email is masked and change values are hidden (only changed-field names) by default.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function searchLogs(
         ?string $event = null,
         ?string $category = null,
@@ -119,8 +123,10 @@ class AuditLogTools
     #[McpTool(
         name: 'trails_get_log',
         description: 'Get a single Trails audit log entry by id (actor email masked, change values hidden by default).',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function getLog(int $id): array
     {
         return $this->guard(function() use ($id): array {
@@ -141,8 +147,10 @@ class AuditLogTools
     #[McpTool(
         name: 'trails_count_logs',
         description: 'Count Trails audit log entries matching optional filters (event, category, user, element, IP, text, date range).',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function countLogs(
         ?string $event = null,
         ?string $category = null,
@@ -169,8 +177,10 @@ class AuditLogTools
     #[McpTool(
         name: 'trails_event_types',
         description: 'List the distinct event types present in the Trails audit log.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function eventTypes(): array
     {
         return $this->guard(static fn(): array => [
@@ -184,8 +194,10 @@ class AuditLogTools
     #[McpTool(
         name: 'trails_categories',
         description: 'List the distinct event categories present in the Trails audit log.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function categories(): array
     {
         return $this->guard(static fn(): array => [
