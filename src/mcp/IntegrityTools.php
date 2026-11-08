@@ -4,6 +4,8 @@ namespace anvildev\trails\mcp;
 
 use anvildev\trails\Trails;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
+use craft\mcp\attributes\RequiresPermission;
 use stimmt\craft\Mcp\attributes\McpToolMeta;
 use stimmt\craft\Mcp\enums\ToolCategory;
 
@@ -33,8 +35,10 @@ class IntegrityTools
     #[McpTool(
         name: 'trails_verify_logs',
         description: 'Verify the HMAC integrity of every audit record (detects tampering). Returns counts plus the ids of any tampered/missing rows. Scans all tables — can be slow on large logs.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function verifyLogs(int $batchSize = 500): array
     {
         return $this->guard(static fn(): array => [
@@ -48,8 +52,10 @@ class IntegrityTools
     #[McpTool(
         name: 'trails_verify_chain',
         description: 'Verify the prev-hash chain links across the whole audit trail (detects insertions/deletions). Returns verified/failed counts and the first failure position.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function verifyChain(int $batchSize = 500): array
     {
         return $this->guard(static fn(): array => [
@@ -63,8 +69,10 @@ class IntegrityTools
     #[McpTool(
         name: 'trails_verify_merkle_roots',
         description: 'Recompute and verify every stored Merkle root against its records. Returns verified/failed counts and failed root ids.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function verifyMerkleRoots(): array
     {
         return $this->guard(static fn(): array => [
@@ -78,8 +86,10 @@ class IntegrityTools
     #[McpTool(
         name: 'trails_verify_anchors',
         description: 'Re-verify every external anchor (S3 / RFC3161 timestamp) for the Merkle roots via the configured backend.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function verifyAnchors(): array
     {
         return $this->guard(static fn(): array => [
@@ -94,8 +104,10 @@ class IntegrityTools
     #[McpTool(
         name: 'trails_inclusion_proof',
         description: 'Get the Merkle inclusion proof for an audit entry at a given chain position (leaf hash, root hash, proof path, verified flag).',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function inclusionProof(int $chainPosition): array
     {
         return $this->guard(function() use ($chainPosition): array {
@@ -120,8 +132,10 @@ class IntegrityTools
     #[McpTool(
         name: 'trails_certificate',
         description: 'Generate a signed compliance certificate for a date range (integrity report + Merkle roots + anchors). Returns the certificate content, content type and file extension.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
+    #[RequiresPermission('trails-viewLogs')]
     public function certificate(string $fromDate, string $toDate, string $format = 'json'): array
     {
         return $this->guard(static fn(): array => [

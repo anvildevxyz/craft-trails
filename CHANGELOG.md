@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+- The existing read-only MCP tools also register with Craft 5.12’s built-in server. stimmt/craft-mcp stays available for older Craft. Every tool still requires permission to view audit logs.
+
 ## 1.1.1 - 2026-08-07
 
 ### Fixed

@@ -9,7 +9,6 @@ use anvildev\trails\mcp\IntegrityTools;
 use anvildev\trails\mcp\support\Presenter;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionMethod;
 
 /**
  * Verifies Trails' craft-mcp integration: each tool class declares the expected
@@ -114,6 +113,23 @@ class McpToolsTest extends TestCase
         $this->assertSame(5, $out['n']);
     }
 
+    public function testCraftServerRegistration(): void
+    {
+        $plugin = file_get_contents($this->srcDir() . '/Trails.php');
+        $this->assertStringContainsString('class_exists(\\craft\\services\\Mcp::class)', $plugin);
+        $this->assertStringContainsString('EVENT_REGISTER_CAPABILITY_TYPES', $plugin);
+        $this->assertStringContainsString('class_exists(\\stimmt\\craft\\Mcp\\Mcp::class)', $plugin);
+        $this->assertStringContainsString('EVENT_REGISTER_TOOLS', $plugin);
+
+        foreach ($this->mcpSourceFiles() as $file) {
+            $src = file_get_contents($file);
+            $tools = preg_match_all("/name: 'trails_/", $src);
+            $this->assertSame($tools, substr_count($src, '#[RequiresPermission(\'trails-viewLogs\')]'), basename($file));
+            $this->assertSame($tools, substr_count($src, 'readOnlyHint: true'), basename($file));
+            $this->assertStringNotContainsString('destructiveHint: true', $src);
+        }
+    }
+
     public function testToolSurfaceIsReadOnly(): void
     {
         $trait = file_get_contents($this->srcDir() . '/mcp/ToolResponseTrait.php');
@@ -203,12 +219,9 @@ class McpToolsTest extends TestCase
     private function declaredToolNames(string $class): array
     {
         $names = [];
-        foreach ((new ReflectionClass($class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            $attr = $method->getAttributes(self::MCP_TOOL_ATTR)[0] ?? null;
-            $name = $attr?->getArguments()['name'] ?? null;
-            if ($name !== null) {
-                $names[] = $name;
-            }
+        $source = (string) file_get_contents((new ReflectionClass($class))->getFileName());
+        if (preg_match_all("/name: '([^']+)'/", $source, $matches)) {
+            $names = $matches[1];
         }
         return $names;
     }
